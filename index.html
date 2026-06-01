@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GT7 Hi-Res Lightweight SVG Splitter</title>
+  <title>GT7 SVGOMG Flow Vectorizer + Split ZIP</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -142,10 +142,10 @@
 </head>
 <body>
   <main class="app">
-    <h1>GT7 Hi-Res Lightweight SVG Splitter</h1>
+    <h1>GT7 SVGOMG Flow Vectorizer + Split ZIP</h1>
     <p class="lead">
-      写真選択 → SVG生成 → SVGOMG風軽量化 → GT7互換チェック → 最大60分割 → ZIP出力の流れで処理します。
-      高めの解像度でも軽くしやすい相対パス化と、パス同士の隙間を埋める自動ブリードに対応しています。
+      写真選択 → SVG生成 → SVGOMG風軽量化 → GT7互換チェック → 15KB分割 → ZIP出力の流れで処理します。
+      分割後の重ね合わせプレビューと、part SVGのGT7対応チェックにも対応しています。
     </p>
 
     <section class="panel">
@@ -168,8 +168,8 @@
         </div>
         <div class="control">
           <label>最大サイズ
-            <input id="maxSideInput" type="range" min="500" max="2600" step="50" value="1400" />
-            <span><b id="maxSideValue">1400</b>px</span>
+            <input id="maxSideInput" type="range" min="300" max="1800" step="50" value="900" />
+            <span><b id="maxSideValue">900</b>px</span>
           </label>
         </div>
         <div class="control">
@@ -185,8 +185,8 @@
           </label>
         </div>
         <div class="control">
-          <label>最大分割数
-            <input id="maxSlicesInput" type="number" min="1" max="60" value="60" />
+          <label>自動スライス最大数
+            <input id="maxSlicesInput" type="number" min="1" max="64" value="24" />
           </label>
         </div>
         <div class="control row">
@@ -202,17 +202,6 @@
         </div>
         <div class="control row">
           <label><input id="mergeSameFillInput" type="checkbox" checked /> SVGOMG風: 同色path結合</label>
-        </div>
-        <div class="control row">
-          <label><input id="relativePathInput" type="checkbox" checked /> SVGOMG風: 相対パスで軽量化</label>
-        </div>
-        <div class="control row">
-          <label><input id="gapFillInput" type="checkbox" checked /> パス同士の隙間を自動で埋める</label>
-        </div>
-        <div class="control">
-          <label>隙間埋め幅
-            <input id="bleedWidthInput" type="number" min="0" max="2" step="0.1" value="0.6" />
-          </label>
         </div>
         <div class="control row">
           <label><input id="removeWidthHeightInput" type="checkbox" checked /> SVGOMG風: width/height削除</label>
@@ -300,9 +289,6 @@
     const shortColorInput = document.getElementById("shortColorInput");
     const precisionInput = document.getElementById("precisionInput");
     const mergeSameFillInput = document.getElementById("mergeSameFillInput");
-    const relativePathInput = document.getElementById("relativePathInput");
-    const gapFillInput = document.getElementById("gapFillInput");
-    const bleedWidthInput = document.getElementById("bleedWidthInput");
     const removeWidthHeightInput = document.getElementById("removeWidthHeightInput");
     const gt7CheckInput = document.getElementById("gt7CheckInput");
 
@@ -359,17 +345,14 @@
       const options = {
         targetBytes: Math.floor(clamp(Number(targetKbInput.value), 4, 15) * 1024),
         colors: clamp(Number(colorsInput.value), 4, 64),
-        maxSide: clamp(Number(maxSideInput.value), 500, 2600),
+        maxSide: clamp(Number(maxSideInput.value), 300, 1800),
         minArea: clamp(Number(minAreaInput.value), 1, 500),
         simplify: clamp(Number(simplifyInput.value), 0, 8),
-        maxSlices: clamp(Number(maxSlicesInput.value), 1, 60),
-        maxParts: clamp(Number(maxSlicesInput.value), 1, 60),
+        maxSlices: clamp(Number(maxSlicesInput.value), 1, 64),
         split: splitInput.checked,
         shortColor: shortColorInput.checked,
         precision: clamp(Number(precisionInput.value), 0, 3),
         mergeSameFill: mergeSameFillInput.checked,
-        relativePath: relativePathInput.checked,
-        bleedWidth: gapFillInput.checked ? clamp(Number(bleedWidthInput.value), 0, 2) : 0,
         removeWidthHeight: removeWidthHeightInput.checked,
         gt7Check: gt7CheckInput.checked
       };
@@ -377,8 +360,6 @@
       currentOptimizer = {
         precision: options.precision,
         mergeSameFill: options.mergeSameFill,
-        relativePath: options.relativePath,
-        bleedWidth: options.bleedWidth,
         removeWidthHeight: options.removeWidthHeight,
         gt7Check: options.gt7Check
       };
@@ -523,10 +504,9 @@
           base.labels, width, height, base.palette, slices, options
         );
         const largest = parts.reduce((m, p) => Math.max(m, p.bytes), 0);
-        const partCountOk = parts.length <= options.maxParts;
-        const passed = partCountOk && parts.every(p => p.bytes <= options.targetBytes && (!p.gt7 || p.gt7.ok));
+        const passed = parts.every(p => p.bytes <= options.targetBytes && (!p.gt7 || p.gt7.ok));
 
-        appendLog(`${passed ? "OK" : "NG"} / スライス:${slices} / 分割数:${parts.length}/${options.maxParts} / 最大:${formatBytes(largest)}`);
+        appendLog(`${passed ? "OK" : "NG"} / スライス:${slices} / 分割数:${parts.length} / 最大:${formatBytes(largest)}`);
 
         const candidate = {
           rawFullSvg: rawFullResult.svg,
@@ -548,14 +528,15 @@
     }
 
     function buildSliceCandidates(maxSlices) {
-      const base = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 30, 36, 42, 48, 54, 60];
+      const base = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64];
       const values = base.filter(v => v <= maxSlices);
       if (!values.includes(maxSlices)) values.push(maxSlices);
       return Array.from(new Set(values)).sort((a, b) => a - b);
     }
 
     function makeSplitPartsFromSlices(labels, width, height, palette, slices, options) {
-      const groupList = [];
+      const allParts = [];
+      let partIndex = 1;
 
       for (let s = 0; s < slices; s++) {
         const x0 = Math.floor(width * s / slices);
@@ -570,70 +551,24 @@
         const groups = splitPathsByTargetBytes(width, height, paths, options.targetBytes);
 
         for (const group of groups) {
-          groupList.push({
-            paths: group,
+          const made = makeSvg(width, height, group);
+          const check = options.gt7Check ? checkGt7Compatibility(made.svg, options.targetBytes, true) : null;
+          allParts.push({
+            name: `part-${String(partIndex).padStart(3, "0")}.svg`,
+            svg: made.svg,
+            inner: made.inner,
+            bytes: byteSize(made.svg),
+            gt7: check,
+            index: partIndex,
             slice: s + 1,
-            totalSlices: slices
+            totalSlices: slices,
+            pathCount: group.length
           });
+          partIndex++;
         }
-      }
-
-      const limitedGroups = groupList.length > options.maxParts
-        ? mergeGroupListToMaxParts(width, height, groupList, options.maxParts)
-        : groupList;
-
-      if (groupList.length > options.maxParts) {
-        appendLog(`  分割数調整: ${groupList.length} → ${limitedGroups.length}個へ再結合`);
-      }
-
-      const allParts = [];
-      let partIndex = 1;
-
-      for (const entry of limitedGroups) {
-        const made = makeSvg(width, height, entry.paths);
-        const check = options.gt7Check ? checkGt7Compatibility(made.svg, options.targetBytes, true) : null;
-        allParts.push({
-          name: `part-${String(partIndex).padStart(3, "0")}.svg`,
-          svg: made.svg,
-          inner: made.inner,
-          bytes: byteSize(made.svg),
-          gt7: check,
-          index: partIndex,
-          slice: entry.slice,
-          totalSlices: slices,
-          pathCount: entry.paths.length
-        });
-        partIndex++;
       }
 
       return allParts;
-    }
-
-    function mergeGroupListToMaxParts(width, height, groups, maxParts) {
-      const merged = groups.map(g => ({ ...g, paths: g.paths.slice() }));
-
-      while (merged.length > maxParts) {
-        let bestIndex = 0;
-        let bestBytes = Infinity;
-
-        for (let i = 0; i < merged.length - 1; i++) {
-          const paths = merged[i].paths.concat(merged[i + 1].paths);
-          const bytes = byteSize(makeSvg(width, height, paths).svg);
-          if (bytes < bestBytes) {
-            bestBytes = bytes;
-            bestIndex = i;
-          }
-        }
-
-        merged[bestIndex] = {
-          paths: merged[bestIndex].paths.concat(merged[bestIndex + 1].paths),
-          slice: merged[bestIndex].slice,
-          totalSlices: merged[bestIndex].totalSlices
-        };
-        merged.splice(bestIndex + 1, 1);
-      }
-
-      return merged;
     }
 
     function splitPathsByTargetBytes(width, height, paths, targetBytes) {
@@ -890,12 +825,6 @@
     }
 
     function loopsToCompactPathD(loops) {
-      return currentOptimizer.relativePath
-        ? loopsToRelativePathD(loops)
-        : loopsToAbsolutePathD(loops);
-    }
-
-    function loopsToAbsolutePathD(loops) {
       const parts = [];
       for (const loop of loops) {
         if (loop.length < 4) continue;
@@ -910,38 +839,6 @@
       return parts.join(" ");
     }
 
-    function loopsToRelativePathD(loops) {
-      const parts = [];
-
-      for (const loop of loops) {
-        if (loop.length < 4) continue;
-
-        const first = loop[0];
-        parts.push(`M${num(first[0])} ${num(first[1])}`);
-
-        const rel = [];
-        let px = first[0];
-        let py = first[1];
-
-        for (let i = 1; i < loop.length - 1; i++) {
-          const p = loop[i];
-          const dx = p[0] - px;
-          const dy = p[1] - py;
-          rel.push(`${num(dx)} ${num(dy)}`);
-          px = p[0];
-          py = p[1];
-        }
-
-        if (rel.length) {
-          parts.push(`l${rel.join(" ")}`);
-        }
-
-        parts.push("Z");
-      }
-
-      return parts.join("");
-    }
-
     function makeRawSvg(width, height, paths) {
       const body = paths.map(p => `  <path fill="${p.fill}" fill-rule="evenodd" d="${p.d}" />`).join("\n");
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">\n${body}\n</svg>`;
@@ -950,27 +847,16 @@
 
     function makeSvg(width, height, paths) {
       const outputPaths = currentOptimizer.mergeSameFill ? mergePathsByFill(paths) : paths;
-      const bleed = Number(currentOptimizer.bleedWidth || 0);
-      const inner = outputPaths.map(p => {
-        const stroke = bleed > 0 ? ` stroke="${p.fill}"` : "";
-        return `<path fill="${p.fill}"${stroke} d="${p.d}"/>`;
-      }).join("");
+      const inner = outputPaths.map(p => `<path fill="${p.fill}" d="${p.d}"/>`).join("");
       const sizeAttrs = currentOptimizer.removeWidthHeight ? "" : ` width="${width}" height="${height}"`;
-      const groupAttrs = bleed > 0
-        ? ` fill-rule="evenodd" stroke-width="${numAttr(bleed)}" stroke-linejoin="round"`
-        : ` fill-rule="evenodd"`;
-      const svg = finalMinifySvg(`<svg xmlns="http://www.w3.org/2000/svg"${sizeAttrs} viewBox="0 0 ${width} ${height}"><g${groupAttrs}>${inner}</g></svg>`);
+      const svg = finalMinifySvg(`<svg xmlns="http://www.w3.org/2000/svg"${sizeAttrs} viewBox="0 0 ${width} ${height}"><g fill-rule="evenodd">${inner}</g></svg>`);
       return { svg, inner };
     }
 
     function makeCombinedSvg(width, height, parts) {
       const inner = parts.map(p => p.inner || "").join("");
       const sizeAttrs = currentOptimizer.removeWidthHeight ? "" : ` width="${width}" height="${height}"`;
-      const bleed = Number(currentOptimizer.bleedWidth || 0);
-      const groupAttrs = bleed > 0
-        ? ` fill-rule="evenodd" stroke-width="${numAttr(bleed)}" stroke-linejoin="round"`
-        : ` fill-rule="evenodd"`;
-      return finalMinifySvg(`<svg xmlns="http://www.w3.org/2000/svg"${sizeAttrs} viewBox="0 0 ${width} ${height}"><g${groupAttrs}>${inner}</g></svg>`);
+      return finalMinifySvg(`<svg xmlns="http://www.w3.org/2000/svg"${sizeAttrs} viewBox="0 0 ${width} ${height}"><g fill-rule="evenodd">${inner}</g></svg>`);
     }
 
     function mergePathsByFill(paths) {
@@ -1081,14 +967,6 @@
     }
 
 
-    function numAttr(value) {
-      let n = Number(value);
-      if (!Number.isFinite(n)) return "0";
-      let s = n.toFixed(2).replace(/\.?0+$/, "");
-      if (s === "-0") s = "0";
-      return s.replace(/^(-?)0\./, "$1.");
-    }
-
     function num(value) {
       const precision = clamp(Number(currentOptimizer.precision || 0), 0, 3);
       let n = Number(value);
@@ -1179,7 +1057,7 @@
           errors.push("XMLとして解析できません");
         } else {
           const allowedTags = new Set(["svg", "g", "path"]);
-          const allowedAttrs = new Set(["xmlns", "viewBox", "viewbox", "version", "width", "height", "fill", "fill-rule", "d", "stroke", "stroke-width", "stroke-linejoin", "stroke-linecap", "stroke-miterlimit"]);
+          const allowedAttrs = new Set(["xmlns", "viewBox", "viewbox", "version", "width", "height", "fill", "fill-rule", "d"]);
           const all = [doc.documentElement, ...Array.from(doc.documentElement.querySelectorAll("*"))];
           for (const el of all) {
             const tag = el.tagName;
