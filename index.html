@@ -3,430 +3,41 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GT7 Cyber Fidelity SVG Vectorizer Lite Preview</title>
+  <title>GT7 Ultra Fidelity Smooth SVG Vectorizer</title>
   <style>
-
-    :root{
-      --bg:#050711;
-      --bg2:#09111f;
-      --panel:rgba(8,18,34,.76);
-      --panel2:rgba(7,13,26,.9);
-      --line:rgba(0,240,255,.28);
-      --line2:rgba(255,43,214,.23);
-      --text:#e9fbff;
-      --muted:#88a4b8;
-      --cyan:#00eaff;
-      --blue:#3d7bff;
-      --pink:#ff2bd6;
-      --green:#7dffb2;
-      --warn:#ff5e8a;
-      --shadow:0 0 24px rgba(0,234,255,.18),0 0 72px rgba(255,43,214,.08);
-    }
-
     *{box-sizing:border-box}
-
-    html{scroll-behavior:smooth}
-
-    body{
-      margin:0;
-      min-height:100vh;
-      color:var(--text);
-      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
-      background:
-        radial-gradient(circle at 18% 10%,rgba(0,234,255,.17),transparent 26%),
-        radial-gradient(circle at 88% 8%,rgba(255,43,214,.14),transparent 28%),
-        radial-gradient(circle at 50% 95%,rgba(61,123,255,.16),transparent 34%),
-        linear-gradient(135deg,#04050d 0%,#07111f 44%,#080713 100%);
-      overflow-x:hidden;
-    }
-
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      pointer-events:none;
-      background:
-        linear-gradient(rgba(0,234,255,.055) 1px,transparent 1px),
-        linear-gradient(90deg,rgba(0,234,255,.055) 1px,transparent 1px),
-        linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px);
-      background-size:48px 48px,48px 48px,100% 4px;
-      mask-image:linear-gradient(to bottom,rgba(0,0,0,.88),rgba(0,0,0,.28));
-      z-index:-2;
-    }
-
-    body::after{display:none}
-
-    @keyframes slowSpin{to{transform:rotate(360deg)}}
-
-    .app{
-      max-width:1320px;
-      margin:0 auto;
-      padding:32px;
-      position:relative;
-    }
-
-    .app::before{
-      content:"GT7 / SVG / VECTOR CORE";
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-      margin-bottom:14px;
-      padding:7px 12px;
-      border:1px solid rgba(0,234,255,.36);
-      border-radius:999px;
-      color:var(--cyan);
-      background:rgba(0,234,255,.06);
-      box-shadow:0 0 18px rgba(0,234,255,.13) inset;
-      font-size:11px;
-      letter-spacing:.18em;
-      font-weight:900;
-    }
-
-    h1{
-      margin:0 0 10px;
-      font-size:clamp(30px,4vw,52px);
-      line-height:1;
-      letter-spacing:.01em;
-      text-transform:uppercase;
-      background:linear-gradient(90deg,#fff,var(--cyan),var(--pink));
-      -webkit-background-clip:text;
-      background-clip:text;
-      color:transparent;
-      text-shadow:0 0 30px rgba(0,234,255,.18);
-    }
-
-    h2{
-      margin:28px 0 12px;
-      font-size:17px;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      color:#dffcff;
-      display:flex;
-      align-items:center;
-      gap:10px;
-    }
-
-    h2::before{
-      content:"";
-      width:9px;
-      height:9px;
-      border-radius:50%;
-      background:var(--cyan);
-      box-shadow:0 0 16px var(--cyan),0 0 28px var(--pink);
-    }
-
-    .lead,.note{
-      color:var(--muted);
-      line-height:1.85;
-      max-width:980px;
-    }
-
-    .lead{
-      margin:0 0 24px;
-      font-size:15px;
-    }
-
-    .note{
-      padding:16px 18px;
-      border:1px solid rgba(0,234,255,.18);
-      border-radius:16px;
-      background:linear-gradient(135deg,rgba(0,234,255,.045),rgba(255,43,214,.035));
-      box-shadow:var(--shadow);
-    }
-
-    .panel{
-      position:relative;
-      overflow:hidden;
-      background:
-        linear-gradient(135deg,rgba(10,26,48,.88),rgba(5,8,20,.9)),
-        radial-gradient(circle at 0% 0%,rgba(0,234,255,.18),transparent 35%);
-      border:1px solid var(--line);
-      border-radius:22px;
-      padding:20px;
-      box-shadow:var(--shadow),inset 0 0 0 1px rgba(255,255,255,.03);
-    }
-
-    .panel::before{display:none}
-
-    @keyframes panelScan{
-      0%,62%{transform:translateX(-120%)}
-      100%{transform:translateX(120%)}
-    }
-
-    .file-label{
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      padding:13px 20px;
-      border:1px solid rgba(0,234,255,.72);
-      border-radius:999px;
-      color:#001018;
-      background:linear-gradient(90deg,var(--cyan),#7dffb2);
-      box-shadow:0 0 22px rgba(0,234,255,.35),0 0 50px rgba(125,255,178,.12);
-      cursor:pointer;
-      font-weight:950;
-      letter-spacing:.06em;
-      text-transform:uppercase;
-      transition:transform .18s ease,filter .18s ease,box-shadow .18s ease;
-    }
-
-    .file-label:hover{transform:translateY(-2px);filter:saturate(1.15);box-shadow:0 0 32px rgba(0,234,255,.55)}
-    .file-label input{display:none}
-
-    .controls{
-      display:grid;
-      grid-template-columns:repeat(4,minmax(170px,1fr));
-      gap:14px;
-      margin-top:20px;
-    }
-
-    .control{
-      position:relative;
-      background:linear-gradient(180deg,rgba(7,20,38,.88),rgba(4,9,20,.9));
-      border:1px solid rgba(0,234,255,.2);
-      border-radius:16px;
-      padding:13px;
-      font-size:14px;
-      color:#d7f8ff;
-      box-shadow:inset 0 0 24px rgba(0,234,255,.035),0 0 20px rgba(0,0,0,.18);
-    }
-
-    .control::after{
-      content:"";
-      position:absolute;
-      top:-1px;
-      right:14px;
-      width:38px;
-      height:1px;
-      background:var(--pink);
-      box-shadow:0 0 12px var(--pink);
-      opacity:.8;
-    }
-
-    .control label{display:flex;flex-direction:column;gap:8px;font-weight:800}
-    .control.row label{flex-direction:row;align-items:center;font-weight:800}
-    .control small{color:#7895a9;line-height:1.45;font-weight:600}
-
-    input[type="range"]{
-      width:100%;
-      accent-color:var(--cyan);
-      filter:drop-shadow(0 0 7px rgba(0,234,255,.35));
-    }
-
-    input[type="number"]{
-      width:98px;
-      color:var(--text);
-      background:rgba(0,0,0,.36);
-      border:1px solid rgba(0,234,255,.32);
-      border-radius:10px;
-      padding:8px 9px;
-      box-shadow:inset 0 0 14px rgba(0,234,255,.06);
-      outline:none;
-    }
-
-    input[type="number"]:focus{
-      border-color:var(--cyan);
-      box-shadow:0 0 0 3px rgba(0,234,255,.12),inset 0 0 14px rgba(0,234,255,.08);
-    }
-
-    input[type="checkbox"]{
-      width:18px;
-      height:18px;
-      accent-color:var(--cyan);
-      filter:drop-shadow(0 0 5px rgba(0,234,255,.45));
-    }
-
-    .buttons{
-      display:flex;
-      flex-wrap:wrap;
-      gap:12px;
-      margin-top:20px;
-    }
-
-    button{
-      position:relative;
-      isolation:isolate;
-      border:1px solid rgba(0,234,255,.62);
-      border-radius:999px;
-      padding:12px 18px;
-      color:#00131a;
-      background:linear-gradient(90deg,var(--cyan),#65ffcf);
-      box-shadow:0 0 18px rgba(0,234,255,.27),inset 0 0 0 1px rgba(255,255,255,.28);
-      font-weight:950;
-      letter-spacing:.03em;
-      cursor:pointer;
-      transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;
-    }
-
-    button::before{
-      content:"";
-      position:absolute;
-      inset:2px;
-      border-radius:inherit;
-      background:linear-gradient(90deg,rgba(255,255,255,.22),transparent 45%);
-      z-index:-1;
-    }
-
-    button:hover:not(:disabled){transform:translateY(-2px);filter:saturate(1.18);box-shadow:0 0 28px rgba(0,234,255,.42)}
-    button.secondary{color:#eafcff;background:linear-gradient(90deg,rgba(15,36,68,.92),rgba(23,12,48,.92));border-color:rgba(255,43,214,.38);box-shadow:0 0 18px rgba(255,43,214,.14),inset 0 0 18px rgba(0,234,255,.035)}
-    button:disabled{opacity:.36;cursor:not-allowed;filter:grayscale(.5);box-shadow:none}
-
-    #status{
-      margin-top:16px;
-      color:#a6ccdd;
-      font-size:14px;
-      line-height:1.75;
-      padding:12px 14px;
-      border-radius:14px;
-      border:1px solid rgba(0,234,255,.14);
-      background:rgba(0,0,0,.22);
-    }
-
-    .stats{
-      display:grid;
-      grid-template-columns:repeat(6,1fr);
-      gap:12px;
-      margin-top:16px;
-    }
-
-    .stat{
-      position:relative;
-      overflow:hidden;
-      min-height:82px;
-      background:linear-gradient(180deg,rgba(5,18,34,.92),rgba(5,7,17,.92));
-      border:1px solid rgba(0,234,255,.22);
-      border-radius:16px;
-      padding:14px;
-      color:#8fb3c8;
-      font-size:12px;
-      letter-spacing:.08em;
-      text-transform:uppercase;
-      box-shadow:inset 0 0 22px rgba(0,234,255,.04);
-    }
-
-    .stat::before{
-      content:"";
-      position:absolute;
-      left:0;
-      top:0;
-      width:3px;
-      height:100%;
-      background:linear-gradient(var(--cyan),var(--pink));
-      box-shadow:0 0 18px var(--cyan);
-    }
-
-    .stat b{
-      display:block;
-      color:#fff;
-      font-size:18px;
-      margin-top:7px;
-      word-break:break-word;
-      letter-spacing:0;
-      text-transform:none;
-      text-shadow:0 0 14px rgba(0,234,255,.24);
-    }
-
-    .preview-grid{
-      display:grid;
-      grid-template-columns:1fr 1fr;
-      gap:22px;
-      margin-top:24px;
-    }
-
-    canvas,.svg-preview{
-      width:100%;
-      min-height:390px;
-      background:
-        linear-gradient(45deg,#e8eef5 25%,transparent 25%),
-        linear-gradient(-45deg,#e8eef5 25%,transparent 25%),
-        linear-gradient(45deg,transparent 75%,#e8eef5 75%),
-        linear-gradient(-45deg,transparent 75%,#e8eef5 75%),
-        #ffffff;
-      background-size:24px 24px,24px 24px,24px 24px,24px 24px,auto;
-      background-position:0 0,0 12px,12px -12px,-12px 0,center;
-      border:1px solid rgba(0,234,255,.24);
-      border-radius:20px;
-      box-shadow:var(--shadow),inset 0 0 0 1px rgba(255,255,255,.03);
-    }
-
-    .svg-preview{
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      overflow:auto;
-      padding:14px;
-    }
-
-    .svg-preview img,.svg-preview svg{max-width:100%;max-height:570px}
-    .svg-preview iframe{width:100%;height:570px;border:0;background:transparent}
-    .preview-message{color:#082033;background:rgba(255,255,255,.86);border:1px solid rgba(0,234,255,.35);border-radius:14px;padding:14px;line-height:1.7;text-align:center}
-
-    .parts{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-      gap:12px;
-      margin-top:12px;
-    }
-
-    .part-card{
-      position:relative;
-      background:linear-gradient(180deg,rgba(6,19,36,.92),rgba(5,7,16,.92));
-      border:1px solid rgba(0,234,255,.2);
-      border-radius:16px;
-      padding:13px;
-      color:#cceff7;
-      font-size:13px;
-      line-height:1.65;
-      box-shadow:inset 0 0 18px rgba(0,234,255,.04);
-    }
-
-    .part-card b{color:#fff;text-shadow:0 0 12px rgba(0,234,255,.22)}
-    .part-card button{margin-top:8px;padding:8px 12px;font-size:12px}
-
-    textarea{
-      width:100%;
-      min-height:220px;
-      padding:15px;
-      color:#bfffea;
-      background:rgba(0,0,0,.55);
-      border:1px solid rgba(0,234,255,.22);
-      border-radius:18px;
-      resize:vertical;
-      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
-      font-size:12px;
-      line-height:1.55;
-      box-shadow:inset 0 0 25px rgba(0,234,255,.035),0 0 24px rgba(0,0,0,.18);
-      outline:none;
-    }
-
-    textarea:focus{border-color:rgba(0,234,255,.55);box-shadow:0 0 0 3px rgba(0,234,255,.1),inset 0 0 25px rgba(0,234,255,.055)}
-
-    .ok{color:var(--green);text-shadow:0 0 10px rgba(125,255,178,.35)}
-    .ng{color:var(--warn);text-shadow:0 0 10px rgba(255,94,138,.35)}
-
-    ::selection{background:rgba(0,234,255,.25);color:#fff}
-
-    @media(max-width:1000px){
-      .controls,.stats,.preview-grid{grid-template-columns:1fr 1fr}
-      .stats{grid-template-columns:repeat(2,1fr)}
-    }
-
-    @media(max-width:700px){
-      .app{padding:22px 16px}
-      .controls,.stats,.preview-grid{grid-template-columns:1fr}
-      h1{font-size:32px}
-    }
-
-    @media(prefers-reduced-motion:reduce){
-      *,*::before,*::after{animation:none!important;transition:none!important}
-    }
-
-  </style>
+    body{margin:0;background:#f5f7fb;color:#1f2937;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+    .app{max-width:1200px;margin:0 auto;padding:24px}
+    h1{margin:0 0 8px;font-size:28px}
+    h2{margin:24px 0 10px;font-size:18px}
+    .lead,.note{color:#596579;line-height:1.75}
+    .panel,.part-card,.stat,.control{background:#fff;border:1px solid #d8dee9;border-radius:12px}
+    .panel{padding:18px;box-shadow:0 1px 2px rgba(0,0,0,.04)}
+    .file-label{display:inline-block;padding:12px 18px;background:#2563eb;color:#fff;border-radius:999px;cursor:pointer;font-weight:700}.file-label input{display:none}
+    .controls{display:grid;grid-template-columns:repeat(4,minmax(170px,1fr));gap:12px;margin-top:18px}
+    .control{padding:12px;font-size:14px;color:#374151}
+    .control label{display:flex;flex-direction:column;gap:8px}.control.row label{flex-direction:row;align-items:center}.control small{color:#6b7280;line-height:1.4}
+    input[type="range"]{width:100%}
+    input[type="number"]{width:96px;background:#fff;color:#111827;border:1px solid #cbd5e1;border-radius:8px;padding:7px}
+    .buttons{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    button{border:0;border-radius:999px;padding:11px 16px;font-weight:700;cursor:pointer;background:#2563eb;color:#fff}
+    button.secondary{background:#64748b}button:disabled{opacity:.45;cursor:not-allowed}
+    #status{margin-top:14px;color:#475569;font-size:14px;line-height:1.7}
+    .stats{display:grid;grid-template-columns:repeat(6,1fr);gap:12px;margin-top:16px}.stat{padding:14px;color:#64748b}.stat b{display:block;color:#0f172a;font-size:18px;margin-top:4px;word-break:break-word}
+    .preview-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px}
+    canvas,.svg-preview{width:100%;min-height:380px;background:linear-gradient(45deg,#eef2f7 25%,transparent 25%),linear-gradient(-45deg,#eef2f7 25%,transparent 25%),linear-gradient(45deg,transparent 75%,#eef2f7 75%),linear-gradient(-45deg,transparent 75%,#eef2f7 75%);background-size:24px 24px;background-position:0 0,0 12px,12px -12px,-12px 0;border:1px solid #d8dee9;border-radius:12px}
+    .svg-preview{display:flex;align-items:center;justify-content:center;overflow:hidden;padding:0;background-color:#fff}
+    .svg-preview iframe{width:100%;height:560px;border:0;background:#fff;border-radius:12px}
+    .parts{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:12px}.part-card{padding:12px;color:#334155;font-size:13px;line-height:1.6}.part-card button{margin-top:8px;padding:8px 12px;font-size:12px}
+    textarea{width:100%;min-height:220px;padding:14px;background:#fff;color:#0f172a;border:1px solid #d8dee9;border-radius:12px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:12px;line-height:1.5}
+    .ok{color:#15803d}.ng{color:#b91c1c}
+    @media(max-width:900px){.controls,.stats,.preview-grid{grid-template-columns:1fr}}
+</style>
 </head>
 <body>
   <main class="app">
-    <h1>GT7 Cyber Fidelity SVG Vectorizer Lite Preview</h1>
-    <p class="lead">輪郭簡略化を低い値のまま、ギザギザやノイズを抑えて高品質なSVGを作ります。プレビューはiframe隔離表示、SVGコード自動表示はOFFにして、重いSVGでもサイトが固まりにくいようにしています。</p>
+    <h1>GT7 Ultra Fidelity Smooth SVG Vectorizer</h1>
+    <p class="lead">輪郭簡略化を低い値のまま、ギザギザやノイズを抑えて高品質なSVGを作ります。写真選択 → SVG生成 → SVGOMG風軽量化 → GT7対応チェック → 最大60分割 → 合成プレビュー → ZIP一括DL の流れです。</p>
     <section class="panel">
       <label class="file-label">画像を選択<input id="fileInput" type="file" accept="image/*" /></label>
       <div class="controls">
@@ -444,8 +55,6 @@
         <div class="control"><label>隙間埋め幅<input id="bleedWidthInput" type="number" min="0" max="2" step="0.1" value="0.4" /></label></div>
         <div class="control row"><label><input id="shortColorInput" type="checkbox" checked />色コード短縮</label></div>
         <div class="control row"><label><input id="preserveOrderInput" type="checkbox" checked />描画順をなるべく維持</label></div>
-        <div class="control row"><label><input id="liteUiInput" type="checkbox" checked />サイト軽量モード</label></div>
-        <div class="control row"><label><input id="autoCodeInput" type="checkbox" />SVGコードを自動表示</label></div>
       </div>
       <div class="buttons">
         <button id="vectorizeBtn" disabled>高品質SVG化して分割</button>
@@ -484,18 +93,18 @@ const $=id=>document.getElementById(id);
 const fileInput=$('fileInput'),sourceCanvas=$('sourceCanvas'),svgPreview=$('svgPreview'),svgOutput=$('svgOutput'),logOutput=$('logOutput'),partsList=$('partsList');
 const vectorizeBtn=$('vectorizeBtn'),downloadFullBtn=$('downloadFullBtn'),downloadZipBtn=$('downloadZipBtn'),copyBtn=$('copyBtn'),showCombinedBtn=$('showCombinedBtn'),showFullBtn=$('showFullBtn');
 const statusEl=$('status'),fullSizeEl=$('fullSize'),partsCountEl=$('partsCount'),largestPartEl=$('largestPart'),gt7StatusEl=$('gt7Status'),pathCountEl=$('pathCount'),splitModeEl=$('splitMode');
-const inputs={targetKb:$('targetKbInput'),colors:$('colorsInput'),maxSide:$('maxSideInput'),minArea:$('minAreaInput'),simplify:$('simplifyInput'),precision:$('precisionInput'),labelSmooth:$('labelSmoothInput'),curveStrength:$('curveStrengthInput'),maxParts:$('maxPartsInput'),curve:$('curveInput'),bleed:$('bleedInput'),bleedWidth:$('bleedWidthInput'),shortColor:$('shortColorInput'),preserveOrder:$('preserveOrderInput'),liteUi:$('liteUiInput'),autoCode:$('autoCodeInput')};
+const inputs={targetKb:$('targetKbInput'),colors:$('colorsInput'),maxSide:$('maxSideInput'),minArea:$('minAreaInput'),simplify:$('simplifyInput'),precision:$('precisionInput'),labelSmooth:$('labelSmoothInput'),curveStrength:$('curveStrengthInput'),maxParts:$('maxPartsInput'),curve:$('curveInput'),bleed:$('bleedInput'),bleedWidth:$('bleedWidthInput'),shortColor:$('shortColorInput'),preserveOrder:$('preserveOrderInput')};
 let loadedImage=null,fullSvg='',combinedSvg='',partFiles=[],displayedSvg='',previewUrl='';
 bindRange(inputs.colors,$('colorsValue'));bindRange(inputs.maxSide,$('maxSideValue'));bindRange(inputs.minArea,$('minAreaValue'));bindRange(inputs.simplify,$('simplifyValue'));bindRange(inputs.curveStrength,$('curveStrengthValue'));
 function bindRange(input,out){input.addEventListener('input',()=>{out.textContent=input.value})}
 fileInput.addEventListener('change',async()=>{const f=fileInput.files[0];if(!f)return;loadedImage=await loadImage(f);resetOutputs();drawSourceImage();vectorizeBtn.disabled=false;statusEl.textContent='画像を読み込みました。高品質SVG化できます。'});
-vectorizeBtn.addEventListener('click',async()=>{if(!loadedImage)return;setBusy(true);resetOutputs(false);const opt=readOptions();try{statusEl.textContent='高品質モードでSVG生成中...';await waitFrame();const result=await runPipeline(loadedImage,opt);fullSvg=result.fullSvg;combinedSvg=result.combinedSvg;partFiles=result.parts;displayedSvg=combinedSvg||fullSvg;setCodeOutput(displayedSvg,opt);renderSvgPreview(displayedSvg,opt);renderPartsList(partFiles,opt);updateStats(result,opt);downloadFullBtn.disabled=false;downloadZipBtn.disabled=partFiles.length===0;copyBtn.disabled=false;showCombinedBtn.disabled=false;showFullBtn.disabled=false;statusEl.textContent=result.allPassed?'完了。分割後の全SVGがGT7目標サイズ内です。':'完了。ただし一部パートが目標サイズを超えています。最大分割数は60のため、色数/最小面積/パーツ分けを調整してください。'}catch(e){console.error(e);statusEl.textContent='エラーが発生しました。最大サイズや色数を少し下げて試してください。'}setBusy(false)});
+vectorizeBtn.addEventListener('click',async()=>{if(!loadedImage)return;setBusy(true);resetOutputs(false);const opt=readOptions();try{statusEl.textContent='高品質モードでSVG生成中...';await waitFrame();const result=await runPipeline(loadedImage,opt);fullSvg=result.fullSvg;combinedSvg=result.combinedSvg;partFiles=result.parts;displayedSvg=combinedSvg||fullSvg;svgOutput.value=displayedSvg;renderSvgPreview(displayedSvg);renderPartsList(partFiles,opt);updateStats(result,opt);downloadFullBtn.disabled=false;downloadZipBtn.disabled=partFiles.length===0;copyBtn.disabled=false;showCombinedBtn.disabled=false;showFullBtn.disabled=false;statusEl.textContent=result.allPassed?'完了。分割後の全SVGがGT7目標サイズ内です。':'完了。ただし一部パートが目標サイズを超えています。最大分割数は60のため、色数/最小面積/パーツ分けを調整してください。'}catch(e){console.error(e);statusEl.textContent='エラーが発生しました。最大サイズや色数を少し下げて試してください。'}setBusy(false)});
 downloadFullBtn.addEventListener('click',()=>{if(fullSvg)downloadText('optimized-full.svg',fullSvg)});
 downloadZipBtn.addEventListener('click',()=>{if(!partFiles.length)return;const files=partFiles.map(p=>({name:p.name,text:p.svg}));const blob=makeZip(files);downloadBlob('gt7-svg-parts.zip',blob)});
 copyBtn.addEventListener('click',async()=>{if(!displayedSvg)return;await navigator.clipboard.writeText(displayedSvg);statusEl.textContent='表示中のSVGコードをコピーしました。'});
-showCombinedBtn.addEventListener('click',()=>{if(!combinedSvg)return;displayedSvg=combinedSvg;setCodeOutput(displayedSvg,readOptions());renderSvgPreview(displayedSvg,readOptions());statusEl.textContent='分割SVGを全部重ねた合成プレビューを表示しています。'});
-showFullBtn.addEventListener('click',()=>{if(!fullSvg)return;displayedSvg=fullSvg;setCodeOutput(displayedSvg,readOptions());renderSvgPreview(displayedSvg,readOptions());statusEl.textContent='軽量化後の全体SVGを表示しています。'});
-function readOptions(){return{targetBytes:Math.floor(clamp(Number(inputs.targetKb.value),4,15)*1024),colors:clamp(Number(inputs.colors.value),8,128),maxSide:clamp(Number(inputs.maxSide.value),700,3200),minArea:clamp(Number(inputs.minArea.value),1,120),simplify:clamp(Number(inputs.simplify.value),0,1.5),precision:clamp(Number(inputs.precision.value),0,2),labelSmooth:clamp(Number(inputs.labelSmooth.value),0,3),curveStrength:clamp(Number(inputs.curveStrength.value),0,1),maxParts:clamp(Number(inputs.maxParts.value),1,60),curve:inputs.curve.checked,bleed:inputs.bleed.checked,bleedWidth:clamp(Number(inputs.bleedWidth.value),0,2),shortColor:inputs.shortColor.checked,preserveOrder:inputs.preserveOrder.checked,liteUi:inputs.liteUi.checked,autoCode:inputs.autoCode.checked}}
+showCombinedBtn.addEventListener('click',()=>{if(!combinedSvg)return;displayedSvg=combinedSvg;svgOutput.value=displayedSvg;renderSvgPreview(displayedSvg);statusEl.textContent='分割SVGを全部重ねた合成プレビューを表示しています。'});
+showFullBtn.addEventListener('click',()=>{if(!fullSvg)return;displayedSvg=fullSvg;svgOutput.value=displayedSvg;renderSvgPreview(displayedSvg);statusEl.textContent='軽量化後の全体SVGを表示しています。'});
+function readOptions(){return{targetBytes:Math.floor(clamp(Number(inputs.targetKb.value),4,15)*1024),colors:clamp(Number(inputs.colors.value),8,128),maxSide:clamp(Number(inputs.maxSide.value),700,3200),minArea:clamp(Number(inputs.minArea.value),1,120),simplify:clamp(Number(inputs.simplify.value),0,1.5),precision:clamp(Number(inputs.precision.value),0,2),labelSmooth:clamp(Number(inputs.labelSmooth.value),0,3),curveStrength:clamp(Number(inputs.curveStrength.value),0,1),maxParts:clamp(Number(inputs.maxParts.value),1,60),curve:inputs.curve.checked,bleed:inputs.bleed.checked,bleedWidth:clamp(Number(inputs.bleedWidth.value),0,2),shortColor:inputs.shortColor.checked,preserveOrder:inputs.preserveOrder.checked}}
 function resetOutputs(resetButtons=true){fullSvg='';combinedSvg='';partFiles=[];displayedSvg='';svgOutput.value='';logOutput.value='';partsList.innerHTML='';svgPreview.innerHTML='';fullSizeEl.textContent='-';partsCountEl.textContent='-';largestPartEl.textContent='-';gt7StatusEl.textContent='-';pathCountEl.textContent='-';splitModeEl.textContent='-';if(resetButtons){vectorizeBtn.disabled=true}downloadFullBtn.disabled=true;downloadZipBtn.disabled=true;copyBtn.disabled=true;showCombinedBtn.disabled=true;showFullBtn.disabled=true}
 function setBusy(v){vectorizeBtn.disabled=v;}
 async function runPipeline(img,opt){const base=prepareLabels(img,opt);appendLog(`画像解析: ${base.width}x${base.height}, 色数:${opt.colors}, 平滑化:${opt.labelSmooth}`);statusEl.textContent='輪郭抽出・曲線化中...';await waitFrame();let paths=buildPathsForTile(base,0,base.width,opt);paths.sort((a,b)=>b.area-a.area);const pathCount=paths.length;let fullSvgText=makeSvg(base.width,base.height,paths,opt).svg;fullSvgText=optimizeSvgText(fullSvgText,opt);appendLog(`SVGOMG風軽量化後の全体SVG: ${formatBytes(byteSize(fullSvgText))}, path:${pathCount}`);const wholeParts=splitPathsByTarget(base.width,base.height,paths,opt,'part');const wholeOk=wholeParts.length<=opt.maxParts&&wholeParts.every(p=>p.bytes<=opt.targetBytes);let chosenParts=wholeParts,mode='path分割';if(!wholeOk){appendLog('path分割だけでは収まらないため、重なり付きスライス分割を試します。');const tiled=await findBestTiledSplit(base,opt);if(tiled&&(!chosenParts.length||tiled.score<scoreParts(chosenParts,opt))){chosenParts=tiled.parts;mode=`重なり付きスライス ${tiled.slices}`}}chosenParts=chosenParts.slice(0,opt.maxParts);chosenParts.forEach((p,i)=>{p.name=`part-${String(i+1).padStart(3,'0')}.svg`;p.index=i+1});const combined=makeCombinedSvg(base.width,base.height,chosenParts);const largest=chosenParts.reduce((m,p)=>Math.max(m,p.bytes),0);const allPassed=chosenParts.length<=opt.maxParts&&chosenParts.every(p=>p.bytes<=opt.targetBytes)&&checkGt7Parts(chosenParts,opt).ok;appendLog(`採用: ${mode}, 分割数:${chosenParts.length}, 最大:${formatBytes(largest)}`);return{fullSvg:fullSvgText,combinedSvg:combined,parts:chosenParts,allPassed,pathCount,mode,width:base.width,height:base.height}}
@@ -507,57 +116,18 @@ function loopsToPathD(loops,opt){return loops.map(loop=>opt.curve?loopToCurveD(l
 function loopToLineD(loop,opt){const pts=normalizeLoop(loop);if(pts.length<3)return'';let d=`M${num(pts[0][0],opt.precision)} ${num(pts[0][1],opt.precision)}`;for(let i=1;i<pts.length;i++){d+=` ${num(pts[i][0],opt.precision)} ${num(pts[i][1],opt.precision)}`}return d+'Z'}
 function loopToCurveD(loop,opt){const pts=normalizeLoop(loop);const n=pts.length;if(n<3)return'';let d=`M${num(pts[0][0],opt.precision)} ${num(pts[0][1],opt.precision)}`;const t=opt.curveStrength;for(let i=0;i<n;i++){const p0=pts[(i-1+n)%n],p1=pts[i],p2=pts[(i+1)%n],p3=pts[(i+2)%n];const c1=[p1[0]+(p2[0]-p0[0])*t/6,p1[1]+(p2[1]-p0[1])*t/6];const c2=[p2[0]-(p3[0]-p1[0])*t/6,p2[1]-(p3[1]-p1[1])*t/6];d+=`C${num(c1[0],opt.precision)} ${num(c1[1],opt.precision)} ${num(c2[0],opt.precision)} ${num(c2[1],opt.precision)} ${num(p2[0],opt.precision)} ${num(p2[1],opt.precision)}`}return d+'Z'}
 function normalizeLoop(loop){let pts=loop.slice();if(pts.length>1&&pts[0][0]===pts[pts.length-1][0]&&pts[0][1]===pts[pts.length-1][1])pts=pts.slice(0,-1);return pts}
-function makeSvg(width,height,paths,opt){const bleed=opt.bleed&&opt.bleedWidth>0;const groupAttrs=bleed?` fill-rule="evenodd" stroke-linejoin="round" stroke-linecap="round"`:` fill-rule="evenodd"`;const body=paths.map(p=>bleed?`<path fill="${p.fill}" stroke="${p.fill}" stroke-width="${num(opt.bleedWidth,opt.precision)}" d="${p.d}"/>`:`<path fill="${p.fill}" d="${p.d}"/>`).join('');const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><g${groupAttrs}>${body}</g></svg>`;return{svg,bytes:byteSize(svg)}}
+function makeSvg(width,height,paths,opt){const bleed=opt.bleed&&opt.bleedWidth>0;const groupAttrs=bleed?` fill-rule="evenodd" stroke-linejoin="round" stroke-linecap="round"`:` fill-rule="evenodd"`;const body=paths.map(p=>bleed?`<path fill="${p.fill}" stroke="${p.fill}" stroke-width="${num(opt.bleedWidth,opt.precision)}" d="${p.d}"/>`:`<path fill="${p.fill}" d="${p.d}"/>`).join('');const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><g${groupAttrs}>${body}</g></svg>`;return{svg,bytes:byteSize(svg)}}
 function splitPathsByTarget(width,height,paths,opt,prefix){const groups=[];let current=[];for(const p of paths){if(current.length===0){current=[p];continue}const test=current.concat([p]);if(byteSize(makeSvg(width,height,test,opt).svg)>opt.targetBytes){groups.push(current);current=[p]}else current=test}if(current.length)groups.push(current);return groups.map((g,i)=>{const svg=makeSvg(width,height,g,opt).svg;return{name:`${prefix}-${String(i+1).padStart(3,'0')}.svg`,svg,bytes:byteSize(svg),pathCount:g.length}})}
 async function findBestTiledSplit(base,opt){const candidates=[2,3,4,5,6,8,10,12,15,20,24,30,40,50,60].filter(v=>v<=opt.maxParts);let best=null;for(const slices of candidates){statusEl.textContent=`重なり付きスライス分割テスト中... ${slices}`;await waitFrame();const overlap=Math.ceil(Math.max(1,opt.bleedWidth+2));let all=[];for(let s=0;s<slices;s++){const xs=Math.max(0,Math.floor(base.width*s/slices)-overlap);const xe=Math.min(base.width,Math.floor(base.width*(s+1)/slices)+overlap);const paths=buildPathsForTile(base,xs,xe,opt);paths.sort((a,b)=>b.area-a.area);all=all.concat(splitPathsByTarget(base.width,base.height,paths,opt,`slice${s+1}`))}const largest=all.reduce((m,p)=>Math.max(m,p.bytes),0);appendLog(`${all.every(p=>p.bytes<=opt.targetBytes)&&all.length<=opt.maxParts?'OK':'NG'} スライス:${slices} 分割:${all.length} 最大:${formatBytes(largest)}`);const candidate={parts:all,slices,score:scoreParts(all,opt)};if(!best||candidate.score<best.score)best=candidate;if(all.length<=opt.maxParts&&all.every(p=>p.bytes<=opt.targetBytes))return candidate}return best}
 function scoreParts(parts,opt){const largest=parts.reduce((m,p)=>Math.max(m,p.bytes),0);const over=parts.reduce((s,p)=>s+Math.max(0,p.bytes-opt.targetBytes),0);const countPenalty=Math.max(0,parts.length-opt.maxParts)*opt.targetBytes*5;return largest+over*2+countPenalty}
-function makeCombinedSvg(width,height,parts){const body=parts.map(p=>extractSvgInner(p.svg)).join('');return`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${body}</svg>`}
+function makeCombinedSvg(width,height,parts){const body=parts.map(p=>extractSvgInner(p.svg)).join('');return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">${body}</svg>`}
 function extractSvgInner(svg){const m=svg.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);return m?m[1]:svg}
 function optimizeSvgText(svg,opt){return svg.replace(/<!--([\s\S]*?)-->/g,'').replace(/>\s+</g,'><').replace(/\s{2,}/g,' ').replace(/\s\/>/g,'/>').trim()}
 function checkGt7Parts(parts,opt){const bad=[];for(const p of parts){if(p.bytes>opt.targetBytes)bad.push(`${p.name}: size`);if(/<image\b|data:image|<text\b|<script\b|<foreignObject\b|<filter\b|mix-blend-mode|mask=|clipPath/i.test(p.svg))bad.push(`${p.name}: unsupported element`);if(!/viewBox=/.test(p.svg))bad.push(`${p.name}: no viewBox`)}return{ok:bad.length===0,bad}}
 function updateStats(result,opt){const largest=result.parts.reduce((m,p)=>Math.max(m,p.bytes),0);const check=checkGt7Parts(result.parts,opt);fullSizeEl.textContent=formatBytes(byteSize(result.fullSvg));partsCountEl.textContent=String(result.parts.length);largestPartEl.textContent=formatBytes(largest);gt7StatusEl.innerHTML=check.ok&&result.parts.every(p=>p.bytes<=opt.targetBytes)?'<span class="ok">OK</span>':'<span class="ng">要調整</span>';pathCountEl.textContent=String(result.pathCount);splitModeEl.textContent=result.mode}
-function renderPartsList(parts,opt){partsList.innerHTML='';parts.forEach(part=>{const ok=part.bytes<=opt.targetBytes;const card=document.createElement('div');card.className='part-card';card.innerHTML=`<b>${part.name}</b><br>サイズ: <span class="${ok?'ok':'ng'}">${formatBytes(part.bytes)}</span><br>path数: ${part.pathCount}<br>`;const show=document.createElement('button');show.className='secondary';show.textContent='プレビュー';show.onclick=()=>{displayedSvg=part.svg;setCodeOutput(part.svg,opt);renderSvgPreview(part.svg,opt);statusEl.textContent=`${part.name} を表示中です。`};const dl=document.createElement('button');dl.textContent='DL';dl.onclick=()=>downloadText(part.name,part.svg);card.appendChild(show);card.appendChild(document.createTextNode(' '));card.appendChild(dl);partsList.appendChild(card)})}
-
-function setCodeOutput(svg,opt){
-  if(opt&&opt.autoCode){
-    svgOutput.value=svg;
-    return;
-  }
-  svgOutput.value=`SVGコード自動表示はOFFです。\n容量: ${formatBytes(byteSize(svg))}\nコピーやダウンロードはこのまま使えます。\nコードを表示したい場合は「SVGコードを自動表示」をONにして再表示してください。`;
-}
-function renderSvgPreview(svg,opt={}){
-  if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=''}
-  svgPreview.innerHTML='';
-  const safeSvg=ensurePreviewSvg(svg);
-  const bytes=byteSize(safeSvg);
-  // 巨大SVGをDOM直挿しするとサイト全体が重くなるため、iframeに隔離して描画する。
-  const frame=document.createElement('iframe');
-  frame.title='SVG preview';
-  frame.loading='lazy';
-  frame.srcdoc=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;background:transparent;display:flex;align-items:center;justify-content:center;overflow:auto}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body>${safeSvg}</body></html>`;
-  svgPreview.appendChild(frame);
-  if(bytes>3*1024*1024){
-    const msg=document.createElement('div');
-    msg.className='preview-message';
-    msg.textContent='プレビューは重いSVGのためiframeに隔離して表示しています。操作が重い場合は「SVGコードを自動表示」をOFFのまま使ってください。';
-    svgPreview.insertBefore(msg,frame);
-  }
-}
-function ensurePreviewSvg(svg){
-  let out=String(svg||'').trim();
-  if(!out)return '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150"></svg>';
-  if(!/xmlns=/.test(out))out=out.replace('<svg','<svg xmlns="http://www.w3.org/2000/svg"');
-  const vb=out.match(/viewBox=["']([^"']+)["']/i);
-  if(vb&&(!/\swidth=/.test(out)||!/\sheight=/.test(out))){
-    const nums=vb[1].trim().split(/[ ,]+/).map(Number);
-    if(nums.length>=4&&Number.isFinite(nums[2])&&Number.isFinite(nums[3])){
-      if(!/\swidth=/.test(out))out=out.replace('<svg',`<svg width="${nums[2]}"`);
-      if(!/\sheight=/.test(out))out=out.replace('<svg',`<svg height="${nums[3]}"`);
-    }
-  }
-  return out;
-}
-
+function renderPartsList(parts,opt){partsList.innerHTML='';parts.forEach(part=>{const ok=part.bytes<=opt.targetBytes;const card=document.createElement('div');card.className='part-card';card.innerHTML=`<b>${part.name}</b><br>サイズ: <span class="${ok?'ok':'ng'}">${formatBytes(part.bytes)}</span><br>path数: ${part.pathCount}<br>`;const show=document.createElement('button');show.className='secondary';show.textContent='プレビュー';show.onclick=()=>{displayedSvg=part.svg;svgOutput.value=part.svg;renderSvgPreview(part.svg);statusEl.textContent=`${part.name} を表示中です。`};const dl=document.createElement('button');dl.textContent='DL';dl.onclick=()=>downloadText(part.name,part.svg);card.appendChild(show);card.appendChild(document.createTextNode(' '));card.appendChild(dl);partsList.appendChild(card)})}
+function renderSvgPreview(svg){if(previewUrl)URL.revokeObjectURL(previewUrl);svgPreview.innerHTML='';const frame=document.createElement('iframe');frame.setAttribute('loading','lazy');const safeSvg=ensurePreviewSvg(svg);const doc='<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0;padding:0;background:#fff;width:100%;height:100%;display:flex;align-items:center;justify-content:center}svg{max-width:100%;max-height:100%;display:block}</style></head><body>'+safeSvg+'</body></html>';frame.srcdoc=doc;svgPreview.appendChild(frame)}
+function ensurePreviewSvg(svg){let text=String(svg||'').trim();const m=text.match(/viewBox="([^"]+)"|viewBox='([^']+)'/i);let vb=(m&&(m[1]||m[2]))?String(m[1]||m[2]).trim():'';let w=1200,h=1200;if(vb){const p=vb.split(/[ ,]+/).map(Number);if(p.length===4&&isFinite(p[2])&&isFinite(p[3])&&p[2]>0&&p[3]>0){w=p[2];h=p[3]}}if(!/\bxmlns=/.test(text)){text=text.replace(/<svg\b/i,'<svg xmlns="http://www.w3.org/2000/svg"')}if(!/\bwidth=/.test(text)){text=text.replace(/<svg\b/i,`<svg width="${w}"`)}if(!/\bheight=/.test(text)){text=text.replace(/<svg\b/i,`<svg height="${h}"`)}return text}
 function buildPaletteKMeans(pixels,width,height,k){const samples=[],total=width*height,step=Math.max(1,Math.floor(total/36000));for(let i=0;i<total;i+=step){const p=i*4;if(pixels[p+3]<16)continue;samples.push([pixels[p],pixels[p+1],pixels[p+2]])}if(!samples.length)return[[0,0,0]];k=Math.min(k,samples.length);const centers=[];for(let i=0;i<k;i++)centers.push([...samples[Math.floor(i*samples.length/k)]]);for(let iter=0;iter<12;iter++){const sums=Array.from({length:k},()=>[0,0,0,0]);for(const s of samples){const id=nearestColorIndex(s[0],s[1],s[2],centers);sums[id][0]+=s[0];sums[id][1]+=s[1];sums[id][2]+=s[2];sums[id][3]++}for(let i=0;i<k;i++){if(!sums[i][3])continue;centers[i][0]=sums[i][0]/sums[i][3];centers[i][1]=sums[i][1]/sums[i][3];centers[i][2]=sums[i][2]/sums[i][3]}}return centers.map(c=>[Math.round(c[0]),Math.round(c[1]),Math.round(c[2])])}
 function assignLabels(pixels,width,height,palette){const labels=new Int16Array(width*height);for(let i=0;i<width*height;i++){const p=i*4;if(pixels[p+3]<16){labels[i]=-1;continue}labels[i]=nearestColorIndex(pixels[p],pixels[p+1],pixels[p+2],palette)}return labels}
 function smoothLabels(labels,width,height,passes){let cur=labels;for(let pass=0;pass<passes;pass++){const next=new Int16Array(cur);for(let y=1;y<height-1;y++){for(let x=1;x<width-1;x++){const i=y*width+x;if(cur[i]<0)continue;const counts=new Map();for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(dx===0&&dy===0)continue;const v=cur[(y+dy)*width+x+dx];if(v>=0)counts.set(v,(counts.get(v)||0)+1)}let best=cur[i],bestCount=0;for(const [v,c]of counts){if(c>bestCount){best=v;bestCount=c}}if(best!==cur[i]&&bestCount>=5)next[i]=best}}cur=next}return cur}
