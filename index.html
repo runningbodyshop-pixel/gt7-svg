@@ -86,7 +86,7 @@
     <textarea id="svgOutput" spellcheck="false"></textarea>
     <h2>ログ</h2>
     <textarea id="logOutput" spellcheck="false" readonly></textarea>
-    <p class="note">プレビューはまず全体SVGを表示します。分割後の重ね合わせは「分割合成プレビュー」で確認できます。全体SVG軽量化強化済みです。分割前の全体SVGは同色path結合とpathデータ圧縮を強めています。ほぼ元画像と差異がないレベルを狙う場合、1枚15KBではなく多数の分割デカール前提になります。輪郭簡略化は0.08〜0.20、最大サイズは2000px以上、色数は64以上がおすすめです。どうしてもGT7制限内に収まらない場合は、目・顔・髪・服などを画像側で別パーツにしてから変換すると品質を保ちやすいです。</p>
+    <p class="note">プレビューはまず全体SVGを表示します。分割後の重ね合わせは「分割合成プレビュー」で確認できます。全体SVG軽量化強化済みです。エラー内容も画面に表示します。分割前の全体SVGは同色path結合とpathデータ圧縮を強めています。ほぼ元画像と差異がないレベルを狙う場合、1枚15KBではなく多数の分割デカール前提になります。輪郭簡略化は0.08〜0.20、最大サイズは2000px以上、色数は64以上がおすすめです。どうしてもGT7制限内に収まらない場合は、目・顔・髪・服などを画像側で別パーツにしてから変換すると品質を保ちやすいです。</p>
   </main>
 <script>
 const $=id=>document.getElementById(id);
@@ -98,7 +98,7 @@ let loadedImage=null,fullSvg='',combinedSvg='',partFiles=[],displayedSvg='',prev
 bindRange(inputs.colors,$('colorsValue'));bindRange(inputs.maxSide,$('maxSideValue'));bindRange(inputs.minArea,$('minAreaValue'));bindRange(inputs.simplify,$('simplifyValue'));bindRange(inputs.curveStrength,$('curveStrengthValue'));
 function bindRange(input,out){input.addEventListener('input',()=>{out.textContent=input.value})}
 fileInput.addEventListener('change',async()=>{const f=fileInput.files[0];if(!f)return;loadedImage=await loadImage(f);resetOutputs();drawSourceImage();vectorizeBtn.disabled=false;statusEl.textContent='画像を読み込みました。高品質SVG化できます。'});
-vectorizeBtn.addEventListener('click',async()=>{if(!loadedImage)return;setBusy(true);resetOutputs(false);const opt=readOptions();try{statusEl.textContent='高品質モードでSVG生成中...';await waitFrame();const result=await runPipeline(loadedImage,opt);fullSvg=result.fullSvg;combinedSvg=result.combinedSvg;partFiles=result.parts;displayedSvg=fullSvg;svgOutput.value=displayedSvg;renderSvgPreview(fullSvg);renderPartsList(partFiles,opt);updateStats(result,opt);downloadFullBtn.disabled=false;downloadZipBtn.disabled=partFiles.length===0;copyBtn.disabled=false;showCombinedBtn.disabled=false;showFullBtn.disabled=false;statusEl.textContent=result.allPassed?'完了。分割後の全SVGがGT7目標サイズ内です。':'完了。ただし一部パートが目標サイズを超えています。最大分割数は60のため、色数/最小面積/パーツ分けを調整してください。'}catch(e){console.error(e);statusEl.textContent='エラーが発生しました。最大サイズや色数を少し下げて試してください。'}setBusy(false)});
+vectorizeBtn.addEventListener('click',async()=>{if(!loadedImage)return;setBusy(true);resetOutputs(false);const opt=readOptions();try{statusEl.textContent='高品質モードでSVG生成中...';await waitFrame();const result=await runPipeline(loadedImage,opt);fullSvg=result.fullSvg;combinedSvg=result.combinedSvg;partFiles=result.parts;displayedSvg=fullSvg;svgOutput.value=displayedSvg;renderSvgPreview(fullSvg);renderPartsList(partFiles,opt);updateStats(result,opt);downloadFullBtn.disabled=false;downloadZipBtn.disabled=partFiles.length===0;copyBtn.disabled=false;showCombinedBtn.disabled=false;showFullBtn.disabled=false;statusEl.textContent=result.allPassed?'完了。分割後の全SVGがGT7目標サイズ内です。':'完了。ただし一部パートが目標サイズを超えています。最大分割数は60のため、色数/最小面積/パーツ分けを調整してください。'}catch(e){console.error(e);statusEl.textContent='エラーが発生しました: '+(e&&e.message?e.message:e)+'。最大サイズや色数を少し下げて試してください。'}setBusy(false)});
 downloadFullBtn.addEventListener('click',()=>{if(fullSvg)downloadText('optimized-full.svg',fullSvg)});
 downloadZipBtn.addEventListener('click',()=>{if(!partFiles.length)return;const files=partFiles.map(p=>({name:p.name,text:p.svg}));const blob=makeZip(files);downloadBlob('gt7-svg-parts.zip',blob)});
 copyBtn.addEventListener('click',async()=>{if(!displayedSvg)return;await navigator.clipboard.writeText(displayedSvg);statusEl.textContent='表示中のSVGコードをコピーしました。'});
@@ -116,75 +116,61 @@ function loopsToPathD(loops,opt){return loops.map(loop=>opt.curve?loopToCurveD(l
 function loopToLineD(loop,opt){const pts=normalizeLoop(loop);if(pts.length<3)return'';let d=`M${num(pts[0][0],opt.precision)} ${num(pts[0][1],opt.precision)}`;for(let i=1;i<pts.length;i++){d+=` ${num(pts[i][0],opt.precision)} ${num(pts[i][1],opt.precision)}`}return d+'Z'}
 function loopToCurveD(loop,opt){const pts=normalizeLoop(loop);const n=pts.length;if(n<3)return'';let d=`M${num(pts[0][0],opt.precision)} ${num(pts[0][1],opt.precision)}`;const t=opt.curveStrength;for(let i=0;i<n;i++){const p0=pts[(i-1+n)%n],p1=pts[i],p2=pts[(i+1)%n],p3=pts[(i+2)%n];const c1=[p1[0]+(p2[0]-p0[0])*t/6,p1[1]+(p2[1]-p0[1])*t/6];const c2=[p2[0]-(p3[0]-p1[0])*t/6,p2[1]-(p3[1]-p1[1])*t/6];d+=`C${num(c1[0],opt.precision)} ${num(c1[1],opt.precision)} ${num(c2[0],opt.precision)} ${num(c2[1],opt.precision)} ${num(p2[0],opt.precision)} ${num(p2[1],opt.precision)}`}return d+'Z'}
 function normalizeLoop(loop){let pts=loop.slice();if(pts.length>1&&pts[0][0]===pts[pts.length-1][0]&&pts[0][1]===pts[pts.length-1][1])pts=pts.slice(0,-1);return pts}
-function pathMarkup(p,opt){if(p._markup)return p._markup;const bleed=opt.bleed&&opt.bleedWidth>0;const m=bleed?`<path fill="${p.fill}" stroke="${p.fill}" stroke-width="${num(opt.bleedWidth,opt.precision)}" d="${p.d}"/>`:`<path fill="${p.fill}" d="${p.d}"/>`;p._markup=m;return m}
-function svgOpen(width,height,opt){const bleed=opt.bleed&&opt.bleedWidth>0;const groupAttrs=bleed?` fill-rule="evenodd" stroke-linejoin="round" stroke-linecap="round"`:` fill-rule="evenodd"`;return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><g${groupAttrs}>`}
-function svgClose(){return'</g></svg>'}
-function makeSvg(width,height,paths,opt){
-  if (opt && opt.fullOptimize !== false) {
-    const svg = makeUltraCompactSvg(width, height, paths, opt);
-    return {
-      svg,
-      bytes: byteSize(svg)
-    };
-  }
-
-  const body = paths.map(p => {
-    let attrs = `fill="${p.fill}"`;
-    if (opt.bleed && opt.bleedWidth > 0) {
-      attrs += ` stroke="${p.fill}" stroke-width="${num(opt.bleedWidth, opt.precision)}" stroke-linejoin="round"`;
-    }
-    return `<path ${attrs} d="${compactPathData(p.d)}"/>`;
-  }).join("");
-
-  const svg = compactFullSvgAggressive(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><g fill-rule="evenodd">${body}</g></svg>`
-  );
-
-  return {
-    svg,
-    bytes: byteSize(svg)
-  };
-}
 
 function compactPathData(d){
-  return String(d || "")
-    .replace(/,/g, " ")
-    .replace(/\s+/g, " ")
-    .replace(/\s*([MmZzLlHhVvCcSsQqTtAa])\s*/g, "$1")
-    .replace(/\s*-\s*/g, "-")
-    .replace(/([0-9.])-/g, "$1-")
-    .replace(/\.0+(?=[\sA-Za-z-]|$)/g, "")
-    .replace(/(\.\d*?)0+(?=[\sA-Za-z-]|$)/g, "$1")
-    .replace(/\s+/g, " ")
+  return String(d || '')
+    .replace(/,/g, ' ')
+    .replace(/\s+/g, ' ')
+    .replace(/\s*([MmZzLlHhVvCcSsQqTtAa])\s*/g, '$1')
+    .replace(/\s*-\s*/g, '-')
+    .replace(/([0-9.])-/g, '$1-')
+    .replace(/\.0+(?=[\sA-Za-z-]|$)/g, '')
+    .replace(/(\.\d*?)0+(?=[\sA-Za-z-]|$)/g, '$1')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
-function makeUltraCompactSvg(width, height, paths, opt){
-  const byStyle = new Map();
-
-  for (const p of paths) {
-    let style = `fill="${p.fill}"`;
-    if (opt.bleed && opt.bleedWidth > 0) {
-      style += ` stroke="${p.fill}" stroke-width="${num(opt.bleedWidth, opt.precision)}" stroke-linejoin="round"`;
-    }
-
-    if (!byStyle.has(style)) {
-      byStyle.set(style, []);
-    }
-
-    byStyle.get(style).push(p.d);
-  }
-
-  let body = "";
-  for (const [style, ds] of byStyle) {
-    body += `<path ${style} d="${compactPathData(ds.join(" "))}"/>`;
-  }
-
-  return compactFullSvgAggressive(
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><g fill-rule="evenodd">${body}</g></svg>`
-  );
+function compactSvgText(svg){
+  return String(svg || '')
+    .replace(/<!--([\s\S]*?)-->/g, '')
+    .replace(/<metadata[\s\S]*?<\/metadata>/gi, '')
+    .replace(/<title[\s\S]*?<\/title>/gi, '')
+    .replace(/<desc[\s\S]*?<\/desc>/gi, '')
+    .replace(/\s+xmlns:xlink="[^"]*"/g, '')
+    .replace(/\s+version="[^"]*"/g, '')
+    .replace(/ d="([^"]+)"/g, (_, d) => ' d="' + compactPathData(d) + '"')
+    .replace(/>\s+</g, '><')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/\s\/>/g, '/>')
+    .trim();
 }
 
+function makeGroupedSvg(width,height,paths,opt){
+  const bleed=opt.bleed&&opt.bleedWidth>0;
+  const groupAttrs=bleed?` fill-rule="evenodd" stroke-linejoin="round" stroke-linecap="round"`:` fill-rule="evenodd"`;
+  const groups=new Map();
+  for(const p of paths){
+    let attrs=`fill="${p.fill}"`;
+    if(bleed){attrs+=` stroke="${p.fill}" stroke-width="${num(opt.bleedWidth,opt.precision)}"`;}
+    if(!groups.has(attrs))groups.set(attrs,[]);
+    groups.get(attrs).push(p.d);
+  }
+  let body='';
+  for(const [attrs,ds] of groups){body+=`<path ${attrs} d="${compactPathData(ds.join(' '))}"/>`;}
+  return compactSvgText(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><g${groupAttrs}>${body}</g></svg>`);
+}
+
+function pathMarkup(p,opt){const key=`${opt.bleed}-${opt.bleedWidth}-${opt.precision}`;if(p._markup&&p._markupKey===key)return p._markup;const bleed=opt.bleed&&opt.bleedWidth>0;const d=compactPathData(p.d);const m=bleed?`<path fill="${p.fill}" stroke="${p.fill}" stroke-width="${num(opt.bleedWidth,opt.precision)}" d="${d}"/>`:`<path fill="${p.fill}" d="${d}"/>`;p._markup=m;p._markupKey=key;return m}
+function svgOpen(width,height,opt){const bleed=opt.bleed&&opt.bleedWidth>0;const groupAttrs=bleed?` fill-rule="evenodd" stroke-linejoin="round" stroke-linecap="round"`:` fill-rule="evenodd"`;return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><g${groupAttrs}>`}
+function svgClose(){return'</g></svg>'}
+function makeSvg(width,height,paths,opt){const svg=makeGroupedSvg(width,height,paths,opt);return{svg,bytes:byteSize(svg)}}
+function splitPathsByTarget(width,height,paths,opt,prefix){const groups=[];let current=[];let currentBytes=byteSize(svgOpen(width,height,opt)+svgClose());const baseBytes=currentBytes;for(const p of paths){const m=pathMarkup(p,opt);const pBytes=byteSize(m);if(current.length&&currentBytes+pBytes>opt.targetBytes){groups.push(current);current=[];currentBytes=baseBytes}current.push(p);currentBytes+=pBytes}if(current.length)groups.push(current);return groups.map((g,i)=>{const svg=makeSvg(width,height,g,opt).svg;return{name:`${prefix}-${String(i+1).padStart(3,'0')}.svg`,svg,bytes:byteSize(svg),pathCount:g.length}})}
+async function findBestTiledSplit(base,opt,fullBytes){const need=Math.max(2,Math.ceil(fullBytes/Math.max(1,opt.targetBytes)));const candidates=Array.from(new Set([Math.ceil(need*.6),need,Math.ceil(need*1.25),opt.maxParts].map(v=>clamp(v,2,opt.maxParts)))).sort((a,b)=>a-b);let best=null;for(const slices of candidates){statusEl.textContent=`高速スライス分割中... ${slices}`;await waitFrame();const overlap=Math.ceil(Math.max(1,opt.bleedWidth+2));let all=[];for(let s=0;s<slices;s++){if(s%3===0){statusEl.textContent=`高速スライス分割中... ${slices} / ${s+1}`;await waitFrame()}const xs=Math.max(0,Math.floor(base.width*s/slices)-overlap);const xe=Math.min(base.width,Math.floor(base.width*(s+1)/slices)+overlap);const paths=buildPathsForTile(base,xs,xe,opt);paths.sort((a,b)=>b.area-a.area);all=all.concat(splitPathsByTarget(base.width,base.height,paths,opt,`slice${s+1}`))}const largest=all.reduce((m,p)=>Math.max(m,p.bytes),0);appendLog(`${all.every(p=>p.bytes<=opt.targetBytes)&&all.length<=opt.maxParts?'OK':'NG'} スライス:${slices} 分割:${all.length} 最大:${formatBytes(largest)}`);const candidate={parts:all,slices,score:scoreParts(all,opt)};if(!best||candidate.score<best.score)best=candidate;if(all.length<=opt.maxParts&&all.every(p=>p.bytes<=opt.targetBytes))return candidate}return best}
+function packPartsToMax(width,height,parts,opt){if(parts.length<=opt.maxParts)return parts;const packed=[];for(let i=0;i<opt.maxParts;i++){const start=Math.floor(i*parts.length/opt.maxParts);const end=Math.floor((i+1)*parts.length/opt.maxParts);const group=parts.slice(start,end);const body=group.map(p=>extractSvgInner(p.svg)).join('');const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">${body}</svg>`;packed.push({name:`part-${String(i+1).padStart(3,'0')}.svg`,svg,bytes:byteSize(svg),pathCount:group.reduce((n,p)=>n+(p.pathCount||0),0)})}return packed}
+function scoreParts(parts,opt){const largest=parts.reduce((m,p)=>Math.max(m,p.bytes),0);const over=parts.reduce((s,p)=>s+Math.max(0,p.bytes-opt.targetBytes),0);const countPenalty=Math.max(0,parts.length-opt.maxParts)*opt.targetBytes*5;return largest+over*2+countPenalty}
+function makeCombinedSvg(width,height,parts){const body=parts.map(p=>extractSvgInner(p.svg)).join('');return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">${body}</svg>`}
+function extractSvgInner(svg){const m=svg.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);return m?m[1]:svg}
+function optimizeSvgText(svg,opt){return compactSvgText(svg)}
 function checkGt7Parts(parts,opt){const bad=[];for(const p of parts){if(p.bytes>opt.targetBytes)bad.push(`${p.name}: size`);if(/<image\b|data:image|<text\b|<script\b|<foreignObject\b|<filter\b|mix-blend-mode|mask=|clipPath/i.test(p.svg))bad.push(`${p.name}: unsupported element`);if(!/viewBox=/.test(p.svg))bad.push(`${p.name}: no viewBox`)}return{ok:bad.length===0,bad}}
 function updateStats(result,opt){const largest=result.parts.reduce((m,p)=>Math.max(m,p.bytes),0);const check=checkGt7Parts(result.parts,opt);fullSizeEl.textContent=formatBytes(byteSize(result.fullSvg));partsCountEl.textContent=String(result.parts.length);largestPartEl.textContent=formatBytes(largest);gt7StatusEl.innerHTML=check.ok&&result.parts.every(p=>p.bytes<=opt.targetBytes)?'<span class="ok">OK</span>':'<span class="ng">要調整</span>';pathCountEl.textContent=String(result.pathCount);splitModeEl.textContent=result.mode}
 function renderPartsList(parts,opt){partsList.innerHTML='';parts.forEach(part=>{const ok=part.bytes<=opt.targetBytes;const card=document.createElement('div');card.className='part-card';card.innerHTML=`<b>${part.name}</b><br>サイズ: <span class="${ok?'ok':'ng'}">${formatBytes(part.bytes)}</span><br>path数: ${part.pathCount}<br>`;const show=document.createElement('button');show.className='secondary';show.textContent='プレビュー';show.onclick=()=>{displayedSvg=part.svg;svgOutput.value=part.svg;renderSvgPreview(part.svg);statusEl.textContent=`${part.name} を表示中です。`};const dl=document.createElement('button');dl.textContent='DL';dl.onclick=()=>downloadText(part.name,part.svg);card.appendChild(show);card.appendChild(document.createTextNode(' '));card.appendChild(dl);partsList.appendChild(card)})}
