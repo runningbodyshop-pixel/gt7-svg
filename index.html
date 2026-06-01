@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GT7 Cyber Fidelity SVG Vectorizer</title>
+  <title>GT7 Cyber Fidelity SVG Vectorizer Lite Preview</title>
   <style>
 
     :root{
@@ -54,16 +54,7 @@
       z-index:-2;
     }
 
-    body::after{
-      content:"";
-      position:fixed;
-      inset:-20%;
-      pointer-events:none;
-      background:conic-gradient(from 180deg at 50% 50%,transparent,rgba(0,234,255,.08),transparent,rgba(255,43,214,.07),transparent);
-      filter:blur(80px);
-      animation:slowSpin 28s linear infinite;
-      z-index:-3;
-    }
+    body::after{display:none}
 
     @keyframes slowSpin{to{transform:rotate(360deg)}}
 
@@ -153,18 +144,9 @@
       border-radius:22px;
       padding:20px;
       box-shadow:var(--shadow),inset 0 0 0 1px rgba(255,255,255,.03);
-      backdrop-filter:blur(14px);
     }
 
-    .panel::before{
-      content:"";
-      position:absolute;
-      inset:0;
-      pointer-events:none;
-      background:linear-gradient(120deg,transparent 0%,rgba(0,234,255,.12) 18%,transparent 36%);
-      transform:translateX(-120%);
-      animation:panelScan 8s ease-in-out infinite;
-    }
+    .panel::before{display:none}
 
     @keyframes panelScan{
       0%,62%{transform:translateX(-120%)}
@@ -355,14 +337,13 @@
       width:100%;
       min-height:390px;
       background:
-        radial-gradient(circle at 50% 50%,rgba(0,234,255,.08),transparent 40%),
-        linear-gradient(45deg,rgba(0,234,255,.07) 25%,transparent 25%),
-        linear-gradient(-45deg,rgba(255,43,214,.06) 25%,transparent 25%),
-        linear-gradient(45deg,transparent 75%,rgba(0,234,255,.07) 75%),
-        linear-gradient(-45deg,transparent 75%,rgba(255,43,214,.06) 75%),
-        #050914;
-      background-size:auto,24px 24px,24px 24px,24px 24px,24px 24px,auto;
-      background-position:center,0 0,0 12px,12px -12px,-12px 0,center;
+        linear-gradient(45deg,#e8eef5 25%,transparent 25%),
+        linear-gradient(-45deg,#e8eef5 25%,transparent 25%),
+        linear-gradient(45deg,transparent 75%,#e8eef5 75%),
+        linear-gradient(-45deg,transparent 75%,#e8eef5 75%),
+        #ffffff;
+      background-size:24px 24px,24px 24px,24px 24px,24px 24px,auto;
+      background-position:0 0,0 12px,12px -12px,-12px 0,center;
       border:1px solid rgba(0,234,255,.24);
       border-radius:20px;
       box-shadow:var(--shadow),inset 0 0 0 1px rgba(255,255,255,.03);
@@ -376,7 +357,9 @@
       padding:14px;
     }
 
-    .svg-preview img,.svg-preview svg{max-width:100%;max-height:570px;filter:drop-shadow(0 0 16px rgba(0,234,255,.1))}
+    .svg-preview img,.svg-preview svg{max-width:100%;max-height:570px}
+    .svg-preview iframe{width:100%;height:570px;border:0;background:transparent}
+    .preview-message{color:#082033;background:rgba(255,255,255,.86);border:1px solid rgba(0,234,255,.35);border-radius:14px;padding:14px;line-height:1.7;text-align:center}
 
     .parts{
       display:grid;
@@ -442,8 +425,8 @@
 </head>
 <body>
   <main class="app">
-    <h1>GT7 Cyber Fidelity SVG Vectorizer</h1>
-    <p class="lead">輪郭簡略化を低い値のまま、ギザギザやノイズを抑えて高品質なSVGを作ります。写真選択 → SVG生成 → SVGOMG風軽量化 → GT7対応チェック → 最大60分割 → 合成プレビュー → ZIP一括DL の流れです。</p>
+    <h1>GT7 Cyber Fidelity SVG Vectorizer Lite Preview</h1>
+    <p class="lead">輪郭簡略化を低い値のまま、ギザギザやノイズを抑えて高品質なSVGを作ります。プレビューはiframe隔離表示、SVGコード自動表示はOFFにして、重いSVGでもサイトが固まりにくいようにしています。</p>
     <section class="panel">
       <label class="file-label">画像を選択<input id="fileInput" type="file" accept="image/*" /></label>
       <div class="controls">
@@ -461,6 +444,8 @@
         <div class="control"><label>隙間埋め幅<input id="bleedWidthInput" type="number" min="0" max="2" step="0.1" value="0.4" /></label></div>
         <div class="control row"><label><input id="shortColorInput" type="checkbox" checked />色コード短縮</label></div>
         <div class="control row"><label><input id="preserveOrderInput" type="checkbox" checked />描画順をなるべく維持</label></div>
+        <div class="control row"><label><input id="liteUiInput" type="checkbox" checked />サイト軽量モード</label></div>
+        <div class="control row"><label><input id="autoCodeInput" type="checkbox" />SVGコードを自動表示</label></div>
       </div>
       <div class="buttons">
         <button id="vectorizeBtn" disabled>高品質SVG化して分割</button>
@@ -499,18 +484,18 @@ const $=id=>document.getElementById(id);
 const fileInput=$('fileInput'),sourceCanvas=$('sourceCanvas'),svgPreview=$('svgPreview'),svgOutput=$('svgOutput'),logOutput=$('logOutput'),partsList=$('partsList');
 const vectorizeBtn=$('vectorizeBtn'),downloadFullBtn=$('downloadFullBtn'),downloadZipBtn=$('downloadZipBtn'),copyBtn=$('copyBtn'),showCombinedBtn=$('showCombinedBtn'),showFullBtn=$('showFullBtn');
 const statusEl=$('status'),fullSizeEl=$('fullSize'),partsCountEl=$('partsCount'),largestPartEl=$('largestPart'),gt7StatusEl=$('gt7Status'),pathCountEl=$('pathCount'),splitModeEl=$('splitMode');
-const inputs={targetKb:$('targetKbInput'),colors:$('colorsInput'),maxSide:$('maxSideInput'),minArea:$('minAreaInput'),simplify:$('simplifyInput'),precision:$('precisionInput'),labelSmooth:$('labelSmoothInput'),curveStrength:$('curveStrengthInput'),maxParts:$('maxPartsInput'),curve:$('curveInput'),bleed:$('bleedInput'),bleedWidth:$('bleedWidthInput'),shortColor:$('shortColorInput'),preserveOrder:$('preserveOrderInput')};
+const inputs={targetKb:$('targetKbInput'),colors:$('colorsInput'),maxSide:$('maxSideInput'),minArea:$('minAreaInput'),simplify:$('simplifyInput'),precision:$('precisionInput'),labelSmooth:$('labelSmoothInput'),curveStrength:$('curveStrengthInput'),maxParts:$('maxPartsInput'),curve:$('curveInput'),bleed:$('bleedInput'),bleedWidth:$('bleedWidthInput'),shortColor:$('shortColorInput'),preserveOrder:$('preserveOrderInput'),liteUi:$('liteUiInput'),autoCode:$('autoCodeInput')};
 let loadedImage=null,fullSvg='',combinedSvg='',partFiles=[],displayedSvg='',previewUrl='';
 bindRange(inputs.colors,$('colorsValue'));bindRange(inputs.maxSide,$('maxSideValue'));bindRange(inputs.minArea,$('minAreaValue'));bindRange(inputs.simplify,$('simplifyValue'));bindRange(inputs.curveStrength,$('curveStrengthValue'));
 function bindRange(input,out){input.addEventListener('input',()=>{out.textContent=input.value})}
 fileInput.addEventListener('change',async()=>{const f=fileInput.files[0];if(!f)return;loadedImage=await loadImage(f);resetOutputs();drawSourceImage();vectorizeBtn.disabled=false;statusEl.textContent='画像を読み込みました。高品質SVG化できます。'});
-vectorizeBtn.addEventListener('click',async()=>{if(!loadedImage)return;setBusy(true);resetOutputs(false);const opt=readOptions();try{statusEl.textContent='高品質モードでSVG生成中...';await waitFrame();const result=await runPipeline(loadedImage,opt);fullSvg=result.fullSvg;combinedSvg=result.combinedSvg;partFiles=result.parts;displayedSvg=combinedSvg||fullSvg;svgOutput.value=displayedSvg;renderSvgPreview(displayedSvg);renderPartsList(partFiles,opt);updateStats(result,opt);downloadFullBtn.disabled=false;downloadZipBtn.disabled=partFiles.length===0;copyBtn.disabled=false;showCombinedBtn.disabled=false;showFullBtn.disabled=false;statusEl.textContent=result.allPassed?'完了。分割後の全SVGがGT7目標サイズ内です。':'完了。ただし一部パートが目標サイズを超えています。最大分割数は60のため、色数/最小面積/パーツ分けを調整してください。'}catch(e){console.error(e);statusEl.textContent='エラーが発生しました。最大サイズや色数を少し下げて試してください。'}setBusy(false)});
+vectorizeBtn.addEventListener('click',async()=>{if(!loadedImage)return;setBusy(true);resetOutputs(false);const opt=readOptions();try{statusEl.textContent='高品質モードでSVG生成中...';await waitFrame();const result=await runPipeline(loadedImage,opt);fullSvg=result.fullSvg;combinedSvg=result.combinedSvg;partFiles=result.parts;displayedSvg=combinedSvg||fullSvg;setCodeOutput(displayedSvg,opt);renderSvgPreview(displayedSvg,opt);renderPartsList(partFiles,opt);updateStats(result,opt);downloadFullBtn.disabled=false;downloadZipBtn.disabled=partFiles.length===0;copyBtn.disabled=false;showCombinedBtn.disabled=false;showFullBtn.disabled=false;statusEl.textContent=result.allPassed?'完了。分割後の全SVGがGT7目標サイズ内です。':'完了。ただし一部パートが目標サイズを超えています。最大分割数は60のため、色数/最小面積/パーツ分けを調整してください。'}catch(e){console.error(e);statusEl.textContent='エラーが発生しました。最大サイズや色数を少し下げて試してください。'}setBusy(false)});
 downloadFullBtn.addEventListener('click',()=>{if(fullSvg)downloadText('optimized-full.svg',fullSvg)});
 downloadZipBtn.addEventListener('click',()=>{if(!partFiles.length)return;const files=partFiles.map(p=>({name:p.name,text:p.svg}));const blob=makeZip(files);downloadBlob('gt7-svg-parts.zip',blob)});
 copyBtn.addEventListener('click',async()=>{if(!displayedSvg)return;await navigator.clipboard.writeText(displayedSvg);statusEl.textContent='表示中のSVGコードをコピーしました。'});
-showCombinedBtn.addEventListener('click',()=>{if(!combinedSvg)return;displayedSvg=combinedSvg;svgOutput.value=displayedSvg;renderSvgPreview(displayedSvg);statusEl.textContent='分割SVGを全部重ねた合成プレビューを表示しています。'});
-showFullBtn.addEventListener('click',()=>{if(!fullSvg)return;displayedSvg=fullSvg;svgOutput.value=displayedSvg;renderSvgPreview(displayedSvg);statusEl.textContent='軽量化後の全体SVGを表示しています。'});
-function readOptions(){return{targetBytes:Math.floor(clamp(Number(inputs.targetKb.value),4,15)*1024),colors:clamp(Number(inputs.colors.value),8,128),maxSide:clamp(Number(inputs.maxSide.value),700,3200),minArea:clamp(Number(inputs.minArea.value),1,120),simplify:clamp(Number(inputs.simplify.value),0,1.5),precision:clamp(Number(inputs.precision.value),0,2),labelSmooth:clamp(Number(inputs.labelSmooth.value),0,3),curveStrength:clamp(Number(inputs.curveStrength.value),0,1),maxParts:clamp(Number(inputs.maxParts.value),1,60),curve:inputs.curve.checked,bleed:inputs.bleed.checked,bleedWidth:clamp(Number(inputs.bleedWidth.value),0,2),shortColor:inputs.shortColor.checked,preserveOrder:inputs.preserveOrder.checked}}
+showCombinedBtn.addEventListener('click',()=>{if(!combinedSvg)return;displayedSvg=combinedSvg;setCodeOutput(displayedSvg,readOptions());renderSvgPreview(displayedSvg,readOptions());statusEl.textContent='分割SVGを全部重ねた合成プレビューを表示しています。'});
+showFullBtn.addEventListener('click',()=>{if(!fullSvg)return;displayedSvg=fullSvg;setCodeOutput(displayedSvg,readOptions());renderSvgPreview(displayedSvg,readOptions());statusEl.textContent='軽量化後の全体SVGを表示しています。'});
+function readOptions(){return{targetBytes:Math.floor(clamp(Number(inputs.targetKb.value),4,15)*1024),colors:clamp(Number(inputs.colors.value),8,128),maxSide:clamp(Number(inputs.maxSide.value),700,3200),minArea:clamp(Number(inputs.minArea.value),1,120),simplify:clamp(Number(inputs.simplify.value),0,1.5),precision:clamp(Number(inputs.precision.value),0,2),labelSmooth:clamp(Number(inputs.labelSmooth.value),0,3),curveStrength:clamp(Number(inputs.curveStrength.value),0,1),maxParts:clamp(Number(inputs.maxParts.value),1,60),curve:inputs.curve.checked,bleed:inputs.bleed.checked,bleedWidth:clamp(Number(inputs.bleedWidth.value),0,2),shortColor:inputs.shortColor.checked,preserveOrder:inputs.preserveOrder.checked,liteUi:inputs.liteUi.checked,autoCode:inputs.autoCode.checked}}
 function resetOutputs(resetButtons=true){fullSvg='';combinedSvg='';partFiles=[];displayedSvg='';svgOutput.value='';logOutput.value='';partsList.innerHTML='';svgPreview.innerHTML='';fullSizeEl.textContent='-';partsCountEl.textContent='-';largestPartEl.textContent='-';gt7StatusEl.textContent='-';pathCountEl.textContent='-';splitModeEl.textContent='-';if(resetButtons){vectorizeBtn.disabled=true}downloadFullBtn.disabled=true;downloadZipBtn.disabled=true;copyBtn.disabled=true;showCombinedBtn.disabled=true;showFullBtn.disabled=true}
 function setBusy(v){vectorizeBtn.disabled=v;}
 async function runPipeline(img,opt){const base=prepareLabels(img,opt);appendLog(`画像解析: ${base.width}x${base.height}, 色数:${opt.colors}, 平滑化:${opt.labelSmooth}`);statusEl.textContent='輪郭抽出・曲線化中...';await waitFrame();let paths=buildPathsForTile(base,0,base.width,opt);paths.sort((a,b)=>b.area-a.area);const pathCount=paths.length;let fullSvgText=makeSvg(base.width,base.height,paths,opt).svg;fullSvgText=optimizeSvgText(fullSvgText,opt);appendLog(`SVGOMG風軽量化後の全体SVG: ${formatBytes(byteSize(fullSvgText))}, path:${pathCount}`);const wholeParts=splitPathsByTarget(base.width,base.height,paths,opt,'part');const wholeOk=wholeParts.length<=opt.maxParts&&wholeParts.every(p=>p.bytes<=opt.targetBytes);let chosenParts=wholeParts,mode='path分割';if(!wholeOk){appendLog('path分割だけでは収まらないため、重なり付きスライス分割を試します。');const tiled=await findBestTiledSplit(base,opt);if(tiled&&(!chosenParts.length||tiled.score<scoreParts(chosenParts,opt))){chosenParts=tiled.parts;mode=`重なり付きスライス ${tiled.slices}`}}chosenParts=chosenParts.slice(0,opt.maxParts);chosenParts.forEach((p,i)=>{p.name=`part-${String(i+1).padStart(3,'0')}.svg`;p.index=i+1});const combined=makeCombinedSvg(base.width,base.height,chosenParts);const largest=chosenParts.reduce((m,p)=>Math.max(m,p.bytes),0);const allPassed=chosenParts.length<=opt.maxParts&&chosenParts.every(p=>p.bytes<=opt.targetBytes)&&checkGt7Parts(chosenParts,opt).ok;appendLog(`採用: ${mode}, 分割数:${chosenParts.length}, 最大:${formatBytes(largest)}`);return{fullSvg:fullSvgText,combinedSvg:combined,parts:chosenParts,allPassed,pathCount,mode,width:base.width,height:base.height}}
@@ -522,17 +507,57 @@ function loopsToPathD(loops,opt){return loops.map(loop=>opt.curve?loopToCurveD(l
 function loopToLineD(loop,opt){const pts=normalizeLoop(loop);if(pts.length<3)return'';let d=`M${num(pts[0][0],opt.precision)} ${num(pts[0][1],opt.precision)}`;for(let i=1;i<pts.length;i++){d+=` ${num(pts[i][0],opt.precision)} ${num(pts[i][1],opt.precision)}`}return d+'Z'}
 function loopToCurveD(loop,opt){const pts=normalizeLoop(loop);const n=pts.length;if(n<3)return'';let d=`M${num(pts[0][0],opt.precision)} ${num(pts[0][1],opt.precision)}`;const t=opt.curveStrength;for(let i=0;i<n;i++){const p0=pts[(i-1+n)%n],p1=pts[i],p2=pts[(i+1)%n],p3=pts[(i+2)%n];const c1=[p1[0]+(p2[0]-p0[0])*t/6,p1[1]+(p2[1]-p0[1])*t/6];const c2=[p2[0]-(p3[0]-p1[0])*t/6,p2[1]-(p3[1]-p1[1])*t/6];d+=`C${num(c1[0],opt.precision)} ${num(c1[1],opt.precision)} ${num(c2[0],opt.precision)} ${num(c2[1],opt.precision)} ${num(p2[0],opt.precision)} ${num(p2[1],opt.precision)}`}return d+'Z'}
 function normalizeLoop(loop){let pts=loop.slice();if(pts.length>1&&pts[0][0]===pts[pts.length-1][0]&&pts[0][1]===pts[pts.length-1][1])pts=pts.slice(0,-1);return pts}
-function makeSvg(width,height,paths,opt){const bleed=opt.bleed&&opt.bleedWidth>0;const groupAttrs=bleed?` fill-rule="evenodd" stroke-linejoin="round" stroke-linecap="round"`:` fill-rule="evenodd"`;const body=paths.map(p=>bleed?`<path fill="${p.fill}" stroke="${p.fill}" stroke-width="${num(opt.bleedWidth,opt.precision)}" d="${p.d}"/>`:`<path fill="${p.fill}" d="${p.d}"/>`).join('');const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><g${groupAttrs}>${body}</g></svg>`;return{svg,bytes:byteSize(svg)}}
+function makeSvg(width,height,paths,opt){const bleed=opt.bleed&&opt.bleedWidth>0;const groupAttrs=bleed?` fill-rule="evenodd" stroke-linejoin="round" stroke-linecap="round"`:` fill-rule="evenodd"`;const body=paths.map(p=>bleed?`<path fill="${p.fill}" stroke="${p.fill}" stroke-width="${num(opt.bleedWidth,opt.precision)}" d="${p.d}"/>`:`<path fill="${p.fill}" d="${p.d}"/>`).join('');const svg=`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><g${groupAttrs}>${body}</g></svg>`;return{svg,bytes:byteSize(svg)}}
 function splitPathsByTarget(width,height,paths,opt,prefix){const groups=[];let current=[];for(const p of paths){if(current.length===0){current=[p];continue}const test=current.concat([p]);if(byteSize(makeSvg(width,height,test,opt).svg)>opt.targetBytes){groups.push(current);current=[p]}else current=test}if(current.length)groups.push(current);return groups.map((g,i)=>{const svg=makeSvg(width,height,g,opt).svg;return{name:`${prefix}-${String(i+1).padStart(3,'0')}.svg`,svg,bytes:byteSize(svg),pathCount:g.length}})}
 async function findBestTiledSplit(base,opt){const candidates=[2,3,4,5,6,8,10,12,15,20,24,30,40,50,60].filter(v=>v<=opt.maxParts);let best=null;for(const slices of candidates){statusEl.textContent=`重なり付きスライス分割テスト中... ${slices}`;await waitFrame();const overlap=Math.ceil(Math.max(1,opt.bleedWidth+2));let all=[];for(let s=0;s<slices;s++){const xs=Math.max(0,Math.floor(base.width*s/slices)-overlap);const xe=Math.min(base.width,Math.floor(base.width*(s+1)/slices)+overlap);const paths=buildPathsForTile(base,xs,xe,opt);paths.sort((a,b)=>b.area-a.area);all=all.concat(splitPathsByTarget(base.width,base.height,paths,opt,`slice${s+1}`))}const largest=all.reduce((m,p)=>Math.max(m,p.bytes),0);appendLog(`${all.every(p=>p.bytes<=opt.targetBytes)&&all.length<=opt.maxParts?'OK':'NG'} スライス:${slices} 分割:${all.length} 最大:${formatBytes(largest)}`);const candidate={parts:all,slices,score:scoreParts(all,opt)};if(!best||candidate.score<best.score)best=candidate;if(all.length<=opt.maxParts&&all.every(p=>p.bytes<=opt.targetBytes))return candidate}return best}
 function scoreParts(parts,opt){const largest=parts.reduce((m,p)=>Math.max(m,p.bytes),0);const over=parts.reduce((s,p)=>s+Math.max(0,p.bytes-opt.targetBytes),0);const countPenalty=Math.max(0,parts.length-opt.maxParts)*opt.targetBytes*5;return largest+over*2+countPenalty}
-function makeCombinedSvg(width,height,parts){const body=parts.map(p=>extractSvgInner(p.svg)).join('');return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">${body}</svg>`}
+function makeCombinedSvg(width,height,parts){const body=parts.map(p=>extractSvgInner(p.svg)).join('');return`<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">${body}</svg>`}
 function extractSvgInner(svg){const m=svg.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);return m?m[1]:svg}
 function optimizeSvgText(svg,opt){return svg.replace(/<!--([\s\S]*?)-->/g,'').replace(/>\s+</g,'><').replace(/\s{2,}/g,' ').replace(/\s\/>/g,'/>').trim()}
 function checkGt7Parts(parts,opt){const bad=[];for(const p of parts){if(p.bytes>opt.targetBytes)bad.push(`${p.name}: size`);if(/<image\b|data:image|<text\b|<script\b|<foreignObject\b|<filter\b|mix-blend-mode|mask=|clipPath/i.test(p.svg))bad.push(`${p.name}: unsupported element`);if(!/viewBox=/.test(p.svg))bad.push(`${p.name}: no viewBox`)}return{ok:bad.length===0,bad}}
 function updateStats(result,opt){const largest=result.parts.reduce((m,p)=>Math.max(m,p.bytes),0);const check=checkGt7Parts(result.parts,opt);fullSizeEl.textContent=formatBytes(byteSize(result.fullSvg));partsCountEl.textContent=String(result.parts.length);largestPartEl.textContent=formatBytes(largest);gt7StatusEl.innerHTML=check.ok&&result.parts.every(p=>p.bytes<=opt.targetBytes)?'<span class="ok">OK</span>':'<span class="ng">要調整</span>';pathCountEl.textContent=String(result.pathCount);splitModeEl.textContent=result.mode}
-function renderPartsList(parts,opt){partsList.innerHTML='';parts.forEach(part=>{const ok=part.bytes<=opt.targetBytes;const card=document.createElement('div');card.className='part-card';card.innerHTML=`<b>${part.name}</b><br>サイズ: <span class="${ok?'ok':'ng'}">${formatBytes(part.bytes)}</span><br>path数: ${part.pathCount}<br>`;const show=document.createElement('button');show.className='secondary';show.textContent='プレビュー';show.onclick=()=>{displayedSvg=part.svg;svgOutput.value=part.svg;renderSvgPreview(part.svg);statusEl.textContent=`${part.name} を表示中です。`};const dl=document.createElement('button');dl.textContent='DL';dl.onclick=()=>downloadText(part.name,part.svg);card.appendChild(show);card.appendChild(document.createTextNode(' '));card.appendChild(dl);partsList.appendChild(card)})}
-function renderSvgPreview(svg){if(previewUrl)URL.revokeObjectURL(previewUrl);svgPreview.innerHTML='';const img=document.createElement('img');img.alt='SVG preview';previewUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));img.onerror=()=>{svgPreview.innerHTML=svg};img.src=previewUrl;svgPreview.appendChild(img)}
+function renderPartsList(parts,opt){partsList.innerHTML='';parts.forEach(part=>{const ok=part.bytes<=opt.targetBytes;const card=document.createElement('div');card.className='part-card';card.innerHTML=`<b>${part.name}</b><br>サイズ: <span class="${ok?'ok':'ng'}">${formatBytes(part.bytes)}</span><br>path数: ${part.pathCount}<br>`;const show=document.createElement('button');show.className='secondary';show.textContent='プレビュー';show.onclick=()=>{displayedSvg=part.svg;setCodeOutput(part.svg,opt);renderSvgPreview(part.svg,opt);statusEl.textContent=`${part.name} を表示中です。`};const dl=document.createElement('button');dl.textContent='DL';dl.onclick=()=>downloadText(part.name,part.svg);card.appendChild(show);card.appendChild(document.createTextNode(' '));card.appendChild(dl);partsList.appendChild(card)})}
+
+function setCodeOutput(svg,opt){
+  if(opt&&opt.autoCode){
+    svgOutput.value=svg;
+    return;
+  }
+  svgOutput.value=`SVGコード自動表示はOFFです。\n容量: ${formatBytes(byteSize(svg))}\nコピーやダウンロードはこのまま使えます。\nコードを表示したい場合は「SVGコードを自動表示」をONにして再表示してください。`;
+}
+function renderSvgPreview(svg,opt={}){
+  if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=''}
+  svgPreview.innerHTML='';
+  const safeSvg=ensurePreviewSvg(svg);
+  const bytes=byteSize(safeSvg);
+  // 巨大SVGをDOM直挿しするとサイト全体が重くなるため、iframeに隔離して描画する。
+  const frame=document.createElement('iframe');
+  frame.title='SVG preview';
+  frame.loading='lazy';
+  frame.srcdoc=`<!DOCTYPE html><html><head><meta charset="utf-8"><style>html,body{margin:0;width:100%;height:100%;background:transparent;display:flex;align-items:center;justify-content:center;overflow:auto}svg{max-width:100%;max-height:100%;width:auto;height:auto}</style></head><body>${safeSvg}</body></html>`;
+  svgPreview.appendChild(frame);
+  if(bytes>3*1024*1024){
+    const msg=document.createElement('div');
+    msg.className='preview-message';
+    msg.textContent='プレビューは重いSVGのためiframeに隔離して表示しています。操作が重い場合は「SVGコードを自動表示」をOFFのまま使ってください。';
+    svgPreview.insertBefore(msg,frame);
+  }
+}
+function ensurePreviewSvg(svg){
+  let out=String(svg||'').trim();
+  if(!out)return '<svg xmlns="http://www.w3.org/2000/svg" width="300" height="150" viewBox="0 0 300 150"></svg>';
+  if(!/xmlns=/.test(out))out=out.replace('<svg','<svg xmlns="http://www.w3.org/2000/svg"');
+  const vb=out.match(/viewBox=["']([^"']+)["']/i);
+  if(vb&&(!/\swidth=/.test(out)||!/\sheight=/.test(out))){
+    const nums=vb[1].trim().split(/[ ,]+/).map(Number);
+    if(nums.length>=4&&Number.isFinite(nums[2])&&Number.isFinite(nums[3])){
+      if(!/\swidth=/.test(out))out=out.replace('<svg',`<svg width="${nums[2]}"`);
+      if(!/\sheight=/.test(out))out=out.replace('<svg',`<svg height="${nums[3]}"`);
+    }
+  }
+  return out;
+}
+
 function buildPaletteKMeans(pixels,width,height,k){const samples=[],total=width*height,step=Math.max(1,Math.floor(total/36000));for(let i=0;i<total;i+=step){const p=i*4;if(pixels[p+3]<16)continue;samples.push([pixels[p],pixels[p+1],pixels[p+2]])}if(!samples.length)return[[0,0,0]];k=Math.min(k,samples.length);const centers=[];for(let i=0;i<k;i++)centers.push([...samples[Math.floor(i*samples.length/k)]]);for(let iter=0;iter<12;iter++){const sums=Array.from({length:k},()=>[0,0,0,0]);for(const s of samples){const id=nearestColorIndex(s[0],s[1],s[2],centers);sums[id][0]+=s[0];sums[id][1]+=s[1];sums[id][2]+=s[2];sums[id][3]++}for(let i=0;i<k;i++){if(!sums[i][3])continue;centers[i][0]=sums[i][0]/sums[i][3];centers[i][1]=sums[i][1]/sums[i][3];centers[i][2]=sums[i][2]/sums[i][3]}}return centers.map(c=>[Math.round(c[0]),Math.round(c[1]),Math.round(c[2])])}
 function assignLabels(pixels,width,height,palette){const labels=new Int16Array(width*height);for(let i=0;i<width*height;i++){const p=i*4;if(pixels[p+3]<16){labels[i]=-1;continue}labels[i]=nearestColorIndex(pixels[p],pixels[p+1],pixels[p+2],palette)}return labels}
 function smoothLabels(labels,width,height,passes){let cur=labels;for(let pass=0;pass<passes;pass++){const next=new Int16Array(cur);for(let y=1;y<height-1;y++){for(let x=1;x<width-1;x++){const i=y*width+x;if(cur[i]<0)continue;const counts=new Map();for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(dx===0&&dy===0)continue;const v=cur[(y+dy)*width+x+dx];if(v>=0)counts.set(v,(counts.get(v)||0)+1)}let best=cur[i],bestCount=0;for(const [v,c]of counts){if(c>bestCount){best=v;bestCount=c}}if(best!==cur[i]&&bestCount>=5)next[i]=best}}cur=next}return cur}
