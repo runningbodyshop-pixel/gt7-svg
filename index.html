@@ -1,0 +1,344 @@
+<script src="https://cdn.jsdelivr.net/npm/imagetracerjs@1.2.6/imagetracer_v1.2.6.min.js"></script>
+
+<style>
+body{
+  margin:0;
+  background:#111;
+  color:#eee;
+  font-family:system-ui,sans-serif;
+  padding:20px;
+}
+.wrap{
+  max-width:920px;
+  margin:auto;
+}
+input,button,label,select{
+  display:block;
+  margin:14px 0;
+}
+button{
+  padding:12px 18px;
+  font-weight:bold;
+  cursor:pointer;
+}
+canvas{
+  max-width:100%;
+  background:#222;
+  margin-top:16px;
+}
+a{
+  display:none;
+  color:#7cf;
+  font-size:18px;
+  margin-top:18px;
+}
+small{
+  color:#aaa;
+}
+</style>
+
+<div class="wrap">
+  <h1>GT7用 超高品質イラストSVG変換</h1>
+  <p>1500KB上限を活かして、顔・髪・傘・服のディテールをできるだけ保持します。</p>
+
+  <input type="file" id="file" accept="image/png,image/jpeg,image/webp">
+
+  <label>
+    最大容量 KB
+    <input id="maxKb" type="number" value="1500">
+  </label>
+
+  <label>
+    変換モード
+    <select id="mode">
+      <option value="ultra" selected>超高品質・元画像保持</option>
+      <option value="quality">高品質・安定</option>
+      <option value="safe">軽め・安定</option>
+    </select>
+  </label>
+
+  <label>
+    隙間埋め
+    <select id="gap">
+      <option value="0.25">弱</option>
+      <option value="0.4" selected>標準</option>
+      <option value="0.6">強</option>
+    </select>
+  </label>
+
+  <button id="convert">変換する</button>
+
+  <p id="status">画像を選んでください。</p>
+  <canvas id="canvas"></canvas>
+  <a id="download" download="gt7-ultra-quality.svg">SVGをダウンロード</a>
+
+  <p><small>※スマホで落ちる場合は「高品質・安定」か「軽め・安定」を使ってください。</small></p>
+</div>
+
+<script>
+const fileInput=document.getElementById("file");
+const btn=document.getElementById("convert");
+const statusEl=document.getElementById("status");
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d",{willReadFrequently:true});
+const download=document.getElementById("download");
+
+btn.onclick=async()=>{
+  try{
+    const file=fileInput.files[0];
+    if(!file){
+      alert("画像を選択してください");
+      return;
+    }
+
+    btn.disabled=true;
+    download.style.display="none";
+    statusEl.textContent="読み込み中...";
+
+    const maxBytes=Number(document.getElementById("maxKb").value)*1024;
+    const mode=document.getElementById("mode").value;
+    const gap=Number(document.getElementById("gap").value);
+    const img=await loadImage(file);
+
+    let size =
+      mode==="ultra" ? 1700 :
+      mode==="quality" ? 1250 :
+      900;
+
+    let best=null;
+
+    const maxAttempts =
+      mode==="ultra" ? 10 :
+      mode==="quality" ? 9 :
+      7;
+
+    for(let attempt=0;attempt<maxAttempts;attempt++){
+      await wait();
+
+      const scale=Math.min(1,size/Math.max(img.width,img.height));
+      const w=Math.max(160,Math.round(img.width*scale));
+      const h=Math.max(160,Math.round(img.height*scale));
+
+      canvas.width=w;
+      canvas.height=h;
+
+      drawBase(img,w,h,mode);
+
+      let imageData=ctx.getImageData(0,0,w,h);
+      posterize(imageData,mode,attempt);
+      ctx.putImageData(imageData,0,0);
+
+      imageData=ctx.getImageData(0,0,w,h);
+
+      statusEl.textContent=`SVG化中... ${w}×${h}`;
+      await wait();
+
+      const options=getOptions(mode,attempt);
+      let svg=ImageTracer.imagedataToSVG(imageData,options);
+
+      svg=cleanSvg(svg);
+      svg=addGapStroke(svg,gap);
+
+      const bytes=new Blob([svg],{type:"image/svg+xml"}).size;
+
+      if(!best || getScore(bytes,maxBytes,w,h)>getScore(best.bytes,maxBytes,best.w,best.h)){
+        best={svg,bytes,w,h};
+      }
+
+      statusEl.textContent=`調整中... ${(bytes/1024).toFixed(1)}KB / ${w}×${h}`;
+
+      if(bytes<=maxBytes && bytes>maxBytes*0.45){
+        finish(svg,bytes,w,h,false);
+        return;
+      }
+
+      if(bytes<=maxBytes && mode!=="ultra"){
+        finish(svg,bytes,w,h,false);
+        return;
+      }
+
+      if(bytes>maxBytes){
+        size=Math.round(size*0.86);
+      }else{
+        size=Math.round(size*1.08);
+      }
+    }
+
+    finish(best.svg,best.bytes,best.w,best.h,best.bytes>maxBytes);
+
+  }catch(e){
+    statusEl.textContent="エラー: "+e.message;
+  }finally{
+    btn.disabled=false;
+  }
+};
+
+function wait(){
+  return new Promise(resolve=>setTimeout(resolve,35));
+}
+
+function getScore(bytes,maxBytes,w,h){
+  const area=w*h;
+  const ideal=maxBytes*0.75;
+  const byteScore=-Math.abs(bytes-ideal)*0.6;
+  const overPenalty=bytes>maxBytes ? (bytes-maxBytes)*3000 : 0;
+  return area+byteScore-overPenalty;
+}
+
+function loadImage(file){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>reject(new Error("画像を読み込めませんでした"));
+    img.src=URL.createObjectURL(file);
+  });
+}
+
+function drawBase(img,w,h,mode){
+  ctx.clearRect(0,0,w,h);
+  ctx.imageSmoothingEnabled=true;
+  ctx.imageSmoothingQuality="high";
+
+  const blur =
+    mode==="ultra" ? 0 :
+    mode==="quality" ? 0.05 :
+    0.18;
+
+  const contrast =
+    mode==="ultra" ? 1.01 :
+    mode==="quality" ? 1.025 :
+    1.04;
+
+  const saturate =
+    mode==="ultra" ? 1.02 :
+    mode==="quality" ? 1.03 :
+    1.04;
+
+  ctx.filter=`blur(${blur}px) contrast(${contrast}) saturate(${saturate})`;
+  ctx.drawImage(img,0,0,w,h);
+  ctx.filter="none";
+}
+
+function posterize(imageData,mode,attempt){
+  const d=imageData.data;
+
+  const levels =
+    mode==="ultra" ? Math.max(128,220-attempt*4) :
+    mode==="quality" ? Math.max(96,150-attempt*4) :
+    Math.max(64,100-attempt*5);
+
+  const step=255/(levels-1);
+
+  for(let i=0;i<d.length;i+=4){
+    if(d[i+3]<8){
+      d[i+3]=0;
+      continue;
+    }
+
+    let r=Math.round(d[i]/step)*step;
+    let g=Math.round(d[i+1]/step)*step;
+    let b=Math.round(d[i+2]/step)*step;
+
+    const max=Math.max(r,g,b);
+    const min=Math.min(r,g,b);
+
+    if(max<35 && max-min<4){
+      const v=Math.round(((r+g+b)/3)/step)*step;
+      r=g=b=v;
+    }
+
+    d[i]=r;
+    d[i+1]=g;
+    d[i+2]=b;
+    d[i+3]=255;
+  }
+}
+
+function getOptions(mode,attempt){
+  if(mode==="ultra"){
+    return {
+      ltres:0.18+attempt*0.025,
+      qtres:0.18+attempt*0.025,
+      pathomit:0.4+attempt*0.08,
+      colorsampling:2,
+      numberofcolors:Math.max(128,170-attempt*4),
+      mincolorratio:0.00003,
+      layering:1,
+      linefilter:false,
+      roundcoords:8,
+      scale:1,
+      viewbox:true,
+      desc:false
+    };
+  }
+
+  if(mode==="quality"){
+    return {
+      ltres:0.45+attempt*0.04,
+      qtres:0.45+attempt*0.04,
+      pathomit:1.2+attempt*0.16,
+      colorsampling:2,
+      numberofcolors:Math.max(80,112-attempt*3),
+      mincolorratio:0.00015,
+      layering:1,
+      linefilter:false,
+      roundcoords:5,
+      scale:1,
+      viewbox:true,
+      desc:false
+    };
+  }
+
+  return {
+    ltres:0.85+attempt*0.08,
+    qtres:0.85+attempt*0.08,
+    pathomit:2.4+attempt*0.35,
+    colorsampling:2,
+    numberofcolors:Math.max(52,78-attempt*3),
+    mincolorratio:0.0005,
+    layering:1,
+    linefilter:false,
+    roundcoords:3,
+    scale:1,
+    viewbox:true,
+    desc:false
+  };
+}
+
+function cleanSvg(svg){
+  svg=svg.replace(/<desc>[\s\S]*?<\/desc>/g,"");
+  svg=svg.replace(/\s+/g," ");
+  svg=svg.replace(/>\s+</g,"><");
+  svg=svg.trim();
+
+  if(!svg.includes("xmlns=")){
+    svg=svg.replace("<svg",'<svg xmlns="http://www.w3.org/2000/svg"');
+  }
+
+  svg=svg.replace("<svg",'<svg shape-rendering="geometricPrecision"');
+
+  return svg;
+}
+
+function addGapStroke(svg,width){
+  return svg.replace(/<path([^>]*?)fill="([^"]+)"([^>]*?)>/g,(m,a,fill,b)=>{
+    if(fill==="none" || m.includes("stroke=")){
+      return m;
+    }
+
+    return `<path${a}fill="${fill}" stroke="${fill}" stroke-width="${width}" stroke-linejoin="round" stroke-linecap="round"${b}>`;
+  });
+}
+
+function finish(svg,bytes,w,h,over){
+  const blob=new Blob([svg],{type:"image/svg+xml"});
+  const url=URL.createObjectURL(blob);
+
+  download.href=url;
+  download.style.display="inline-block";
+
+  statusEl.textContent=
+    (over ? "1500KB超過。最も高品質な版を出力: " : "完了: ")+
+    `${(bytes/1024).toFixed(1)}KB / ${w}×${h}`;
+}
+</script>
