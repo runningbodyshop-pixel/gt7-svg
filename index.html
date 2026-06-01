@@ -348,8 +348,17 @@
         return;
       }
 
+      loadedImage = null;
       try {
         loadedImage = await loadImage(file);
+      } catch (error) {
+        console.error(error);
+        vectorizeBtn.disabled = true;
+        statusEl.textContent = "画像の読み込みに失敗しました。PNG/JPG/WebPで試してください。";
+        return;
+      }
+
+      try {
         resetOutputs();
         drawSourceImage();
         vectorizeBtn.disabled = false;
@@ -358,7 +367,7 @@
         console.error(error);
         loadedImage = null;
         vectorizeBtn.disabled = true;
-        statusEl.textContent = "画像の読み込みに失敗しました。PNG/JPG/WebPで試してください。";
+        statusEl.textContent = "初期化エラー: " + (error && error.message ? error.message : error);
       }
     });
 
@@ -1344,11 +1353,9 @@
       layerCountEl.textContent = "-";
       downloadFullBtn.disabled = true;
       downloadZipBtn.disabled = true;
-      downloadLineArtBtn.disabled = true;
       copyBtn.disabled = true;
       showFullBtn.disabled = true;
       showCombinedBtn.disabled = true;
-      showLineArtBtn.disabled = true;
       showSelectedBtn.disabled = true;
       if (disableVectorize) vectorizeBtn.disabled = true;
     }
