@@ -3,1529 +3,555 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GT7 High Quality Low-Simplify SVG Splitter</title>
+  <title>GT7 Cyber Fidelity SVG Vectorizer</title>
   <style>
-    * { box-sizing: border-box; }
-    body {
-      margin: 0;
-      background: #101010;
-      color: #eee;
-      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+
+    :root{
+      --bg:#050711;
+      --bg2:#09111f;
+      --panel:rgba(8,18,34,.76);
+      --panel2:rgba(7,13,26,.9);
+      --line:rgba(0,240,255,.28);
+      --line2:rgba(255,43,214,.23);
+      --text:#e9fbff;
+      --muted:#88a4b8;
+      --cyan:#00eaff;
+      --blue:#3d7bff;
+      --pink:#ff2bd6;
+      --green:#7dffb2;
+      --warn:#ff5e8a;
+      --shadow:0 0 24px rgba(0,234,255,.18),0 0 72px rgba(255,43,214,.08);
     }
-    .app { max-width: 1240px; margin: 0 auto; padding: 28px; }
-    h1 { margin: 0 0 8px; font-size: 30px; }
-    h2 { margin: 24px 0 10px; font-size: 18px; }
-    .lead, .note { color: #aaa; line-height: 1.7; }
-    .panel {
-      background: #1c1c1c;
-      border: 1px solid #333;
-      border-radius: 16px;
-      padding: 18px;
-    }
-    .file-label {
-      display: inline-block;
-      padding: 12px 18px;
-      background: #fff;
-      color: #111;
-      border-radius: 999px;
-      cursor: pointer;
-      font-weight: 800;
-    }
-    .file-label input { display: none; }
-    .controls {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(170px, 1fr));
-      gap: 14px;
-      margin-top: 20px;
-    }
-    .control {
-      background: #151515;
-      border: 1px solid #333;
-      border-radius: 12px;
-      padding: 12px;
-      font-size: 14px;
-      color: #ddd;
-    }
-    .control label { display: flex; flex-direction: column; gap: 8px; }
-    .control.row label { flex-direction: row; align-items: center; }
-    input[type="range"] { width: 100%; }
-    input[type="number"] {
-      width: 90px;
-      background: #050505;
-      color: #fff;
-      border: 1px solid #444;
-      border-radius: 8px;
-      padding: 7px;
-    }
-    .buttons { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 20px; }
-    button {
-      border: 0;
-      border-radius: 999px;
-      padding: 12px 18px;
-      font-weight: 800;
-      cursor: pointer;
-      background: #3399ff;
-      color: #fff;
-    }
-    button.secondary { background: #444; }
-    button:disabled { opacity: .35; cursor: not-allowed; }
-    #status { margin-top: 16px; color: #aaa; font-size: 14px; line-height: 1.7; }
-    .stats {
-      display: grid;
-      grid-template-columns: repeat(6, 1fr);
-      gap: 12px;
-      margin-top: 16px;
-    }
-    .stat {
-      background: #151515;
-      border: 1px solid #333;
-      border-radius: 14px;
-      padding: 14px;
-      color: #aaa;
-    }
-    .stat b { display: block; color: #fff; font-size: 20px; margin-top: 4px; word-break: break-word; }
-    .preview-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 22px; margin-top: 24px; }
-    canvas, .svg-preview {
-      width: 100%;
-      min-height: 380px;
+
+    *{box-sizing:border-box}
+
+    html{scroll-behavior:smooth}
+
+    body{
+      margin:0;
+      min-height:100vh;
+      color:var(--text);
+      font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
       background:
-        linear-gradient(45deg, #222 25%, transparent 25%),
-        linear-gradient(-45deg, #222 25%, transparent 25%),
-        linear-gradient(45deg, transparent 75%, #222 75%),
-        linear-gradient(-45deg, transparent 75%, #222 75%);
-      background-size: 24px 24px;
-      background-position: 0 0, 0 12px, 12px -12px, -12px 0;
-      border: 1px solid #333;
-      border-radius: 16px;
+        radial-gradient(circle at 18% 10%,rgba(0,234,255,.17),transparent 26%),
+        radial-gradient(circle at 88% 8%,rgba(255,43,214,.14),transparent 28%),
+        radial-gradient(circle at 50% 95%,rgba(61,123,255,.16),transparent 34%),
+        linear-gradient(135deg,#04050d 0%,#07111f 44%,#080713 100%);
+      overflow-x:hidden;
     }
-    .svg-preview { display: flex; align-items: center; justify-content: center; overflow: auto; padding: 14px; }
-    .svg-preview svg, .svg-preview img { max-width: 100%; max-height: 560px; display: block; }
-    .preview-tools { display: flex; flex-wrap: wrap; gap: 10px; margin: 10px 0; }
-    textarea {
-      width: 100%;
-      min-height: 220px;
-      padding: 14px;
-      background: #050505;
-      color: #d7ffd7;
-      border: 1px solid #333;
-      border-radius: 16px;
-      resize: vertical;
-      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-      font-size: 12px;
-      line-height: 1.5;
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
+      pointer-events:none;
+      background:
+        linear-gradient(rgba(0,234,255,.055) 1px,transparent 1px),
+        linear-gradient(90deg,rgba(0,234,255,.055) 1px,transparent 1px),
+        linear-gradient(rgba(255,255,255,.025) 1px,transparent 1px);
+      background-size:48px 48px,48px 48px,100% 4px;
+      mask-image:linear-gradient(to bottom,rgba(0,0,0,.88),rgba(0,0,0,.28));
+      z-index:-2;
     }
-    .parts {
-      display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
-      gap: 10px;
-      margin-top: 12px;
+
+    body::after{
+      content:"";
+      position:fixed;
+      inset:-20%;
+      pointer-events:none;
+      background:conic-gradient(from 180deg at 50% 50%,transparent,rgba(0,234,255,.08),transparent,rgba(255,43,214,.07),transparent);
+      filter:blur(80px);
+      animation:slowSpin 28s linear infinite;
+      z-index:-3;
     }
-    .part-card {
-      background: #151515;
-      border: 1px solid #333;
-      border-radius: 12px;
-      padding: 12px;
-      color: #ddd;
-      font-size: 13px;
-      line-height: 1.6;
+
+    @keyframes slowSpin{to{transform:rotate(360deg)}}
+
+    .app{
+      max-width:1320px;
+      margin:0 auto;
+      padding:32px;
+      position:relative;
     }
-    .part-card.active { border-color: #3399ff; box-shadow: 0 0 0 1px #3399ff55; }
-    .part-card button { margin-top: 8px; padding: 8px 12px; font-size: 12px; }
-    .ok { color: #92ff92; }
-    .ng { color: #ff9b9b; }
-    .warn { color: #ffd36e; }
-    .small { color: #aaa; font-size: 12px; line-height: 1.5; }
-    @media (max-width: 900px) {
-      .controls, .stats, .preview-grid { grid-template-columns: 1fr; }
+
+    .app::before{
+      content:"GT7 / SVG / VECTOR CORE";
+      display:inline-flex;
+      align-items:center;
+      gap:8px;
+      margin-bottom:14px;
+      padding:7px 12px;
+      border:1px solid rgba(0,234,255,.36);
+      border-radius:999px;
+      color:var(--cyan);
+      background:rgba(0,234,255,.06);
+      box-shadow:0 0 18px rgba(0,234,255,.13) inset;
+      font-size:11px;
+      letter-spacing:.18em;
+      font-weight:900;
     }
+
+    h1{
+      margin:0 0 10px;
+      font-size:clamp(30px,4vw,52px);
+      line-height:1;
+      letter-spacing:.01em;
+      text-transform:uppercase;
+      background:linear-gradient(90deg,#fff,var(--cyan),var(--pink));
+      -webkit-background-clip:text;
+      background-clip:text;
+      color:transparent;
+      text-shadow:0 0 30px rgba(0,234,255,.18);
+    }
+
+    h2{
+      margin:28px 0 12px;
+      font-size:17px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      color:#dffcff;
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    h2::before{
+      content:"";
+      width:9px;
+      height:9px;
+      border-radius:50%;
+      background:var(--cyan);
+      box-shadow:0 0 16px var(--cyan),0 0 28px var(--pink);
+    }
+
+    .lead,.note{
+      color:var(--muted);
+      line-height:1.85;
+      max-width:980px;
+    }
+
+    .lead{
+      margin:0 0 24px;
+      font-size:15px;
+    }
+
+    .note{
+      padding:16px 18px;
+      border:1px solid rgba(0,234,255,.18);
+      border-radius:16px;
+      background:linear-gradient(135deg,rgba(0,234,255,.045),rgba(255,43,214,.035));
+      box-shadow:var(--shadow);
+    }
+
+    .panel{
+      position:relative;
+      overflow:hidden;
+      background:
+        linear-gradient(135deg,rgba(10,26,48,.88),rgba(5,8,20,.9)),
+        radial-gradient(circle at 0% 0%,rgba(0,234,255,.18),transparent 35%);
+      border:1px solid var(--line);
+      border-radius:22px;
+      padding:20px;
+      box-shadow:var(--shadow),inset 0 0 0 1px rgba(255,255,255,.03);
+      backdrop-filter:blur(14px);
+    }
+
+    .panel::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      background:linear-gradient(120deg,transparent 0%,rgba(0,234,255,.12) 18%,transparent 36%);
+      transform:translateX(-120%);
+      animation:panelScan 8s ease-in-out infinite;
+    }
+
+    @keyframes panelScan{
+      0%,62%{transform:translateX(-120%)}
+      100%{transform:translateX(120%)}
+    }
+
+    .file-label{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      padding:13px 20px;
+      border:1px solid rgba(0,234,255,.72);
+      border-radius:999px;
+      color:#001018;
+      background:linear-gradient(90deg,var(--cyan),#7dffb2);
+      box-shadow:0 0 22px rgba(0,234,255,.35),0 0 50px rgba(125,255,178,.12);
+      cursor:pointer;
+      font-weight:950;
+      letter-spacing:.06em;
+      text-transform:uppercase;
+      transition:transform .18s ease,filter .18s ease,box-shadow .18s ease;
+    }
+
+    .file-label:hover{transform:translateY(-2px);filter:saturate(1.15);box-shadow:0 0 32px rgba(0,234,255,.55)}
+    .file-label input{display:none}
+
+    .controls{
+      display:grid;
+      grid-template-columns:repeat(4,minmax(170px,1fr));
+      gap:14px;
+      margin-top:20px;
+    }
+
+    .control{
+      position:relative;
+      background:linear-gradient(180deg,rgba(7,20,38,.88),rgba(4,9,20,.9));
+      border:1px solid rgba(0,234,255,.2);
+      border-radius:16px;
+      padding:13px;
+      font-size:14px;
+      color:#d7f8ff;
+      box-shadow:inset 0 0 24px rgba(0,234,255,.035),0 0 20px rgba(0,0,0,.18);
+    }
+
+    .control::after{
+      content:"";
+      position:absolute;
+      top:-1px;
+      right:14px;
+      width:38px;
+      height:1px;
+      background:var(--pink);
+      box-shadow:0 0 12px var(--pink);
+      opacity:.8;
+    }
+
+    .control label{display:flex;flex-direction:column;gap:8px;font-weight:800}
+    .control.row label{flex-direction:row;align-items:center;font-weight:800}
+    .control small{color:#7895a9;line-height:1.45;font-weight:600}
+
+    input[type="range"]{
+      width:100%;
+      accent-color:var(--cyan);
+      filter:drop-shadow(0 0 7px rgba(0,234,255,.35));
+    }
+
+    input[type="number"]{
+      width:98px;
+      color:var(--text);
+      background:rgba(0,0,0,.36);
+      border:1px solid rgba(0,234,255,.32);
+      border-radius:10px;
+      padding:8px 9px;
+      box-shadow:inset 0 0 14px rgba(0,234,255,.06);
+      outline:none;
+    }
+
+    input[type="number"]:focus{
+      border-color:var(--cyan);
+      box-shadow:0 0 0 3px rgba(0,234,255,.12),inset 0 0 14px rgba(0,234,255,.08);
+    }
+
+    input[type="checkbox"]{
+      width:18px;
+      height:18px;
+      accent-color:var(--cyan);
+      filter:drop-shadow(0 0 5px rgba(0,234,255,.45));
+    }
+
+    .buttons{
+      display:flex;
+      flex-wrap:wrap;
+      gap:12px;
+      margin-top:20px;
+    }
+
+    button{
+      position:relative;
+      isolation:isolate;
+      border:1px solid rgba(0,234,255,.62);
+      border-radius:999px;
+      padding:12px 18px;
+      color:#00131a;
+      background:linear-gradient(90deg,var(--cyan),#65ffcf);
+      box-shadow:0 0 18px rgba(0,234,255,.27),inset 0 0 0 1px rgba(255,255,255,.28);
+      font-weight:950;
+      letter-spacing:.03em;
+      cursor:pointer;
+      transition:transform .16s ease,box-shadow .16s ease,filter .16s ease;
+    }
+
+    button::before{
+      content:"";
+      position:absolute;
+      inset:2px;
+      border-radius:inherit;
+      background:linear-gradient(90deg,rgba(255,255,255,.22),transparent 45%);
+      z-index:-1;
+    }
+
+    button:hover:not(:disabled){transform:translateY(-2px);filter:saturate(1.18);box-shadow:0 0 28px rgba(0,234,255,.42)}
+    button.secondary{color:#eafcff;background:linear-gradient(90deg,rgba(15,36,68,.92),rgba(23,12,48,.92));border-color:rgba(255,43,214,.38);box-shadow:0 0 18px rgba(255,43,214,.14),inset 0 0 18px rgba(0,234,255,.035)}
+    button:disabled{opacity:.36;cursor:not-allowed;filter:grayscale(.5);box-shadow:none}
+
+    #status{
+      margin-top:16px;
+      color:#a6ccdd;
+      font-size:14px;
+      line-height:1.75;
+      padding:12px 14px;
+      border-radius:14px;
+      border:1px solid rgba(0,234,255,.14);
+      background:rgba(0,0,0,.22);
+    }
+
+    .stats{
+      display:grid;
+      grid-template-columns:repeat(6,1fr);
+      gap:12px;
+      margin-top:16px;
+    }
+
+    .stat{
+      position:relative;
+      overflow:hidden;
+      min-height:82px;
+      background:linear-gradient(180deg,rgba(5,18,34,.92),rgba(5,7,17,.92));
+      border:1px solid rgba(0,234,255,.22);
+      border-radius:16px;
+      padding:14px;
+      color:#8fb3c8;
+      font-size:12px;
+      letter-spacing:.08em;
+      text-transform:uppercase;
+      box-shadow:inset 0 0 22px rgba(0,234,255,.04);
+    }
+
+    .stat::before{
+      content:"";
+      position:absolute;
+      left:0;
+      top:0;
+      width:3px;
+      height:100%;
+      background:linear-gradient(var(--cyan),var(--pink));
+      box-shadow:0 0 18px var(--cyan);
+    }
+
+    .stat b{
+      display:block;
+      color:#fff;
+      font-size:18px;
+      margin-top:7px;
+      word-break:break-word;
+      letter-spacing:0;
+      text-transform:none;
+      text-shadow:0 0 14px rgba(0,234,255,.24);
+    }
+
+    .preview-grid{
+      display:grid;
+      grid-template-columns:1fr 1fr;
+      gap:22px;
+      margin-top:24px;
+    }
+
+    canvas,.svg-preview{
+      width:100%;
+      min-height:390px;
+      background:
+        radial-gradient(circle at 50% 50%,rgba(0,234,255,.08),transparent 40%),
+        linear-gradient(45deg,rgba(0,234,255,.07) 25%,transparent 25%),
+        linear-gradient(-45deg,rgba(255,43,214,.06) 25%,transparent 25%),
+        linear-gradient(45deg,transparent 75%,rgba(0,234,255,.07) 75%),
+        linear-gradient(-45deg,transparent 75%,rgba(255,43,214,.06) 75%),
+        #050914;
+      background-size:auto,24px 24px,24px 24px,24px 24px,24px 24px,auto;
+      background-position:center,0 0,0 12px,12px -12px,-12px 0,center;
+      border:1px solid rgba(0,234,255,.24);
+      border-radius:20px;
+      box-shadow:var(--shadow),inset 0 0 0 1px rgba(255,255,255,.03);
+    }
+
+    .svg-preview{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      overflow:auto;
+      padding:14px;
+    }
+
+    .svg-preview img,.svg-preview svg{max-width:100%;max-height:570px;filter:drop-shadow(0 0 16px rgba(0,234,255,.1))}
+
+    .parts{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+      margin-top:12px;
+    }
+
+    .part-card{
+      position:relative;
+      background:linear-gradient(180deg,rgba(6,19,36,.92),rgba(5,7,16,.92));
+      border:1px solid rgba(0,234,255,.2);
+      border-radius:16px;
+      padding:13px;
+      color:#cceff7;
+      font-size:13px;
+      line-height:1.65;
+      box-shadow:inset 0 0 18px rgba(0,234,255,.04);
+    }
+
+    .part-card b{color:#fff;text-shadow:0 0 12px rgba(0,234,255,.22)}
+    .part-card button{margin-top:8px;padding:8px 12px;font-size:12px}
+
+    textarea{
+      width:100%;
+      min-height:220px;
+      padding:15px;
+      color:#bfffea;
+      background:rgba(0,0,0,.55);
+      border:1px solid rgba(0,234,255,.22);
+      border-radius:18px;
+      resize:vertical;
+      font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+      font-size:12px;
+      line-height:1.55;
+      box-shadow:inset 0 0 25px rgba(0,234,255,.035),0 0 24px rgba(0,0,0,.18);
+      outline:none;
+    }
+
+    textarea:focus{border-color:rgba(0,234,255,.55);box-shadow:0 0 0 3px rgba(0,234,255,.1),inset 0 0 25px rgba(0,234,255,.055)}
+
+    .ok{color:var(--green);text-shadow:0 0 10px rgba(125,255,178,.35)}
+    .ng{color:var(--warn);text-shadow:0 0 10px rgba(255,94,138,.35)}
+
+    ::selection{background:rgba(0,234,255,.25);color:#fff}
+
+    @media(max-width:1000px){
+      .controls,.stats,.preview-grid{grid-template-columns:1fr 1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+
+    @media(max-width:700px){
+      .app{padding:22px 16px}
+      .controls,.stats,.preview-grid{grid-template-columns:1fr}
+      h1{font-size:32px}
+    }
+
+    @media(prefers-reduced-motion:reduce){
+      *,*::before,*::after{animation:none!important;transition:none!important}
+    }
+
   </style>
 </head>
 <body>
   <main class="app">
-    <h1>GT7 High Quality Low-Simplify SVG Splitter</h1>
-    <p class="lead">
-      写真選択 → SVG生成 → SVGOMG風軽量化 → GT7互換チェック → 最大60分割 → ZIP出力の流れで処理します。
-      輪郭簡略化を低い値のまま保ち、H/V相対パス圧縮・同色結合・最大60分割・自動ブリードで容量を逃がします。
-    </p>
-
+    <h1>GT7 Cyber Fidelity SVG Vectorizer</h1>
+    <p class="lead">輪郭簡略化を低い値のまま、ギザギザやノイズを抑えて高品質なSVGを作ります。写真選択 → SVG生成 → SVGOMG風軽量化 → GT7対応チェック → 最大60分割 → 合成プレビュー → ZIP一括DL の流れです。</p>
     <section class="panel">
-      <label class="file-label">
-        画像を選択
-        <input id="fileInput" type="file" accept="image/*" />
-      </label>
-
+      <label class="file-label">画像を選択<input id="fileInput" type="file" accept="image/*" /></label>
       <div class="controls">
-        <div class="control">
-          <label>1ファイル目標KB
-            <input id="targetKbInput" type="number" min="4" max="15" step="0.1" value="14.5" />
-          </label>
-        </div>
-        <div class="control">
-          <label>色数
-            <input id="colorsInput" type="range" min="4" max="80" value="32" />
-            <span><b id="colorsValue">32</b></span>
-          </label>
-        </div>
-        <div class="control">
-          <label>最大サイズ
-            <input id="maxSideInput" type="range" min="500" max="3000" step="50" value="1800" />
-            <span><b id="maxSideValue">1800</b>px</span>
-          </label>
-        </div>
-        <div class="control">
-          <label>最小パーツ面積
-            <input id="minAreaInput" type="range" min="1" max="500" value="12" />
-            <span><b id="minAreaValue">12</b></span>
-          </label>
-        </div>
-        <div class="control">
-          <label>輪郭簡略化
-            <input id="simplifyInput" type="range" min="0" max="3" step="0.05" value="0.35" />
-            <span><b id="simplifyValue">0.35</b></span>
-          </label>
-        </div>
-        <div class="control">
-          <label>最大分割数
-            <input id="maxSlicesInput" type="number" min="1" max="60" value="60" />
-          </label>
-        </div>
-        <div class="control row">
-          <label><input id="splitInput" type="checkbox" checked /> SVGを分割する</label>
-        </div>
-        <div class="control row">
-          <label><input id="shortColorInput" type="checkbox" checked /> 色コード短縮</label>
-        </div>
-        <div class="control">
-          <label>SVG小数桁
-            <input id="precisionInput" type="number" min="0" max="3" value="0" />
-          </label>
-        </div>
-        <div class="control row">
-          <label><input id="mergeSameFillInput" type="checkbox" checked /> SVGOMG風: 同色path結合</label>
-        </div>
-        <div class="control row">
-          <label><input id="relativePathInput" type="checkbox" checked /> SVGOMG風: 相対パスで軽量化</label>
-        </div>
-        <div class="control row">
-          <label><input id="smartPathInput" type="checkbox" checked /> 高品質圧縮: H/V最短パス化</label>
-        </div>
-        <div class="control row">
-          <label><input id="lowSimplifyLockInput" type="checkbox" checked /> 輪郭簡略を低く維持</label>
-        </div>
-        <div class="control row">
-          <label><input id="gapFillInput" type="checkbox" checked /> パス同士の隙間を自動で埋める</label>
-        </div>
-        <div class="control">
-          <label>隙間埋め幅
-            <input id="bleedWidthInput" type="number" min="0" max="2" step="0.1" value="0.6" />
-          </label>
-        </div>
-        <div class="control row">
-          <label><input id="removeWidthHeightInput" type="checkbox" checked /> SVGOMG風: width/height削除</label>
-        </div>
-        <div class="control row">
-          <label><input id="gt7CheckInput" type="checkbox" checked /> GT7対応チェック</label>
-        </div>
+        <div class="control"><label>1ファイル目標KB<input id="targetKbInput" type="number" min="4" max="15" step="0.1" value="14.5" /></label></div>
+        <div class="control"><label>色数<input id="colorsInput" type="range" min="8" max="128" value="64" /><span><b id="colorsValue">64</b></span><small>高品質なら48〜96推奨</small></label></div>
+        <div class="control"><label>最大サイズ<input id="maxSideInput" type="range" min="700" max="3200" step="50" value="2200" /><span><b id="maxSideValue">2200</b>px</span><small>解像度を上げるほど輪郭が自然</small></label></div>
+        <div class="control"><label>最小パーツ面積<input id="minAreaInput" type="range" min="1" max="120" value="4" /><span><b id="minAreaValue">4</b></span><small>ノイズが多い時だけ上げる</small></label></div>
+        <div class="control"><label>輪郭簡略化<input id="simplifyInput" type="range" min="0" max="1.5" step="0.02" value="0.12" /><span><b id="simplifyValue">0.12</b></span><small>低いほど形を残す</small></label></div>
+        <div class="control"><label>SVG小数桁<input id="precisionInput" type="number" min="0" max="2" value="1" /><small>曲線化ONなら1推奨</small></label></div>
+        <div class="control"><label>ラベル平滑化<input id="labelSmoothInput" type="number" min="0" max="3" value="1" /><small>孤立ノイズ除去。0で完全忠実寄り</small></label></div>
+        <div class="control"><label>曲線化強度<input id="curveStrengthInput" type="range" min="0" max="1" step="0.05" value="0.45" /><span><b id="curveStrengthValue">0.45</b></span><small>ギザギザを曲線で緩和</small></label></div>
+        <div class="control"><label>最大分割数<input id="maxPartsInput" type="number" min="1" max="60" value="60" /></label></div>
+        <div class="control row"><label><input id="curveInput" type="checkbox" checked />輪郭を曲線化する</label></div>
+        <div class="control row"><label><input id="bleedInput" type="checkbox" checked />隙間を自動で埋める</label></div>
+        <div class="control"><label>隙間埋め幅<input id="bleedWidthInput" type="number" min="0" max="2" step="0.1" value="0.4" /></label></div>
+        <div class="control row"><label><input id="shortColorInput" type="checkbox" checked />色コード短縮</label></div>
+        <div class="control row"><label><input id="preserveOrderInput" type="checkbox" checked />描画順をなるべく維持</label></div>
       </div>
-
       <div class="buttons">
-        <button id="vectorizeBtn" disabled>SVG→軽量化→分割</button>
-        <button id="downloadFullBtn" class="secondary" disabled>軽量化後SVGをDL</button>
+        <button id="vectorizeBtn" disabled>高品質SVG化して分割</button>
+        <button id="downloadFullBtn" class="secondary" disabled>軽量化後の全体SVGをDL</button>
         <button id="downloadZipBtn" class="secondary" disabled>分割SVGをZIPでDL</button>
         <button id="copyBtn" class="secondary" disabled>表示SVGコードをコピー</button>
       </div>
-
       <div id="status">画像を選択してください。</div>
-
       <div class="stats">
-        <div class="stat">生成SVG<b id="rawSize">-</b></div>
-        <div class="stat">軽量化SVG<b id="fullSize">-</b></div>
+        <div class="stat">全体SVG<b id="fullSize">-</b></div>
         <div class="stat">分割数<b id="partsCount">-</b></div>
         <div class="stat">最大パート<b id="largestPart">-</b></div>
-        <div class="stat">スライス数<b id="usedSlices">-</b></div>
-        <div class="stat">GT7判定<b id="resultStatus">-</b></div>
+        <div class="stat">GT7判定<b id="gt7Status">-</b></div>
+        <div class="stat">path数<b id="pathCount">-</b></div>
+        <div class="stat">方式<b id="splitMode">-</b></div>
       </div>
     </section>
-
     <div class="preview-grid">
-      <section>
-        <h2>元画像</h2>
-        <canvas id="sourceCanvas"></canvas>
-      </section>
-
-      <section>
-        <h2>SVGプレビュー</h2>
-        <div class="preview-tools">
-          <button id="showFullBtn" class="secondary" disabled>完成SVG</button>
-          <button id="showCombinedBtn" class="secondary" disabled>分割合成</button>
-          <button id="showSelectedBtn" class="secondary" disabled>選択パート</button>
-        </div>
-        <div id="svgPreview" class="svg-preview"></div>
-      </section>
+      <section><h2>元画像</h2><canvas id="sourceCanvas"></canvas></section>
+      <section><h2>SVGプレビュー</h2><div id="svgPreview" class="svg-preview"></div></section>
     </div>
-
+    <div class="buttons">
+      <button id="showCombinedBtn" class="secondary" disabled>分割合成プレビュー</button>
+      <button id="showFullBtn" class="secondary" disabled>軽量化後の全体SVGプレビュー</button>
+    </div>
     <h2>分割ファイル一覧</h2>
     <div id="partsList" class="parts"></div>
-
     <h2>表示中SVGコード</h2>
     <textarea id="svgOutput" spellcheck="false"></textarea>
-
     <h2>ログ</h2>
     <textarea id="logOutput" spellcheck="false" readonly></textarea>
-
-    <p class="note">
-      GT7では part-001.svg、part-002.svg… をアップロードし、同じ位置・同じサイズに重ねてください。
-      小さい番号を下、大きい番号を上に置く想定です。ZIPは外部ライブラリなしの無圧縮ZIPです。高品質モードでは輪郭簡略化を上げず、H/V最短パス化・同色path結合・空白圧縮・分割で容量を抑えます。
-    </p>
+    <p class="note">ほぼ元画像と差異がないレベルを狙う場合、1枚15KBではなく多数の分割デカール前提になります。輪郭簡略化は0.08〜0.20、最大サイズは2000px以上、色数は64以上がおすすめです。どうしてもGT7制限内に収まらない場合は、目・顔・髪・服などを画像側で別パーツにしてから変換すると品質を保ちやすいです。</p>
   </main>
-
-  <script>
-    const fileInput = document.getElementById("fileInput");
-    const sourceCanvas = document.getElementById("sourceCanvas");
-    const svgPreview = document.getElementById("svgPreview");
-    const svgOutput = document.getElementById("svgOutput");
-    const logOutput = document.getElementById("logOutput");
-    const partsList = document.getElementById("partsList");
-
-    const vectorizeBtn = document.getElementById("vectorizeBtn");
-    const downloadFullBtn = document.getElementById("downloadFullBtn");
-    const downloadZipBtn = document.getElementById("downloadZipBtn");
-    const copyBtn = document.getElementById("copyBtn");
-    const showFullBtn = document.getElementById("showFullBtn");
-    const showCombinedBtn = document.getElementById("showCombinedBtn");
-    const showSelectedBtn = document.getElementById("showSelectedBtn");
-    const statusEl = document.getElementById("status");
-
-    const targetKbInput = document.getElementById("targetKbInput");
-    const colorsInput = document.getElementById("colorsInput");
-    const maxSideInput = document.getElementById("maxSideInput");
-    const minAreaInput = document.getElementById("minAreaInput");
-    const simplifyInput = document.getElementById("simplifyInput");
-    const maxSlicesInput = document.getElementById("maxSlicesInput");
-    const splitInput = document.getElementById("splitInput");
-    const shortColorInput = document.getElementById("shortColorInput");
-    const precisionInput = document.getElementById("precisionInput");
-    const mergeSameFillInput = document.getElementById("mergeSameFillInput");
-    const relativePathInput = document.getElementById("relativePathInput");
-    const smartPathInput = document.getElementById("smartPathInput");
-    const lowSimplifyLockInput = document.getElementById("lowSimplifyLockInput");
-    const gapFillInput = document.getElementById("gapFillInput");
-    const bleedWidthInput = document.getElementById("bleedWidthInput");
-    const removeWidthHeightInput = document.getElementById("removeWidthHeightInput");
-    const gt7CheckInput = document.getElementById("gt7CheckInput");
-
-    const colorsValue = document.getElementById("colorsValue");
-    const maxSideValue = document.getElementById("maxSideValue");
-    const minAreaValue = document.getElementById("minAreaValue");
-    const simplifyValue = document.getElementById("simplifyValue");
-
-    const rawSizeEl = document.getElementById("rawSize");
-    const fullSizeEl = document.getElementById("fullSize");
-    const partsCountEl = document.getElementById("partsCount");
-    const largestPartEl = document.getElementById("largestPart");
-    const usedSlicesEl = document.getElementById("usedSlices");
-    const resultStatusEl = document.getElementById("resultStatus");
-
-    let loadedImage = null;
-    let rawFullSvg = "";
-    let fullSvg = "";
-    let combinedPartsSvg = "";
-    let partFiles = [];
-    let displayedSvg = "";
-    let selectedPartIndex = 0;
-    let previewUrl = "";
-    let fullWidth = 0;
-    let fullHeight = 0;
-    let currentOptimizer = { precision: 0, mergeSameFill: true, removeWidthHeight: true, gt7Check: true, smartPath: true, lowSimplifyLock: true };
-
-    bindRange(colorsInput, colorsValue);
-    bindRange(maxSideInput, maxSideValue);
-    bindRange(minAreaInput, minAreaValue);
-    bindRange(simplifyInput, simplifyValue);
-
-    function bindRange(input, output) {
-      input.addEventListener("input", () => { output.textContent = input.value; });
-    }
-
-    fileInput.addEventListener("change", async () => {
-      const file = fileInput.files[0];
-      if (!file) return;
-
-      loadedImage = await loadImage(file);
-      resetOutputs();
-      drawSourceImage();
-      vectorizeBtn.disabled = false;
-      statusEl.textContent = "画像を読み込みました。SVG化して分割できます。";
-    });
-
-    vectorizeBtn.addEventListener("click", async () => {
-      if (!loadedImage) return;
-
-      setBusy(true);
-      resetOutputs(false);
-
-      const options = {
-        targetBytes: Math.floor(clamp(Number(targetKbInput.value), 4, 15) * 1024),
-        colors: clamp(Number(colorsInput.value), 4, 80),
-        maxSide: clamp(Number(maxSideInput.value), 500, 3000),
-        minArea: clamp(Number(minAreaInput.value), 1, 500),
-        simplify: clamp(Number(simplifyInput.value), 0, 3),
-        maxSlices: clamp(Number(maxSlicesInput.value), 1, 60),
-        maxParts: clamp(Number(maxSlicesInput.value), 1, 60),
-        split: splitInput.checked,
-        shortColor: shortColorInput.checked,
-        precision: clamp(Number(precisionInput.value), 0, 3),
-        mergeSameFill: mergeSameFillInput.checked,
-        relativePath: relativePathInput.checked,
-        smartPath: smartPathInput.checked,
-        lowSimplifyLock: lowSimplifyLockInput.checked,
-        bleedWidth: gapFillInput.checked ? clamp(Number(bleedWidthInput.value), 0, 2) : 0,
-        removeWidthHeight: removeWidthHeightInput.checked,
-        gt7Check: gt7CheckInput.checked
-      };
-
-      currentOptimizer = {
-        precision: options.precision,
-        mergeSameFill: options.mergeSameFill,
-        relativePath: options.relativePath,
-        smartPath: options.smartPath,
-        lowSimplifyLock: options.lowSimplifyLock,
-        bleedWidth: options.bleedWidth,
-        removeWidthHeight: options.removeWidthHeight,
-        gt7Check: options.gt7Check
-      };
-
-      try {
-        statusEl.textContent = "画像を解析中...";
-        appendLog(`高品質モード: 簡略化 ${options.simplify} / 最大サイズ ${options.maxSide}px / 色数 ${options.colors}`);
-        appendLog(options.lowSimplifyLock ? "輪郭簡略を低く維持: ON（容量調整は分割とパス圧縮で対応）" : "輪郭簡略を低く維持: OFF");
-        await waitFrame();
-
-        const result = await vectorizeAndSplit(loadedImage, options);
-
-        rawFullSvg = result.rawFullSvg;
-        fullSvg = result.fullSvg;
-        combinedPartsSvg = result.combinedSvg;
-        partFiles = result.parts;
-        fullWidth = result.width;
-        fullHeight = result.height;
-        selectedPartIndex = 0;
-
-        displayedSvg = combinedPartsSvg || fullSvg;
-        renderSvgPreview(displayedSvg);
-        svgOutput.value = displayedSvg;
-        renderPartsList(partFiles);
-
-        const rawBytes = byteSize(rawFullSvg);
-        const fullBytes = byteSize(fullSvg);
-        const largest = partFiles.reduce((m, p) => Math.max(m, p.bytes), 0);
-        const passed = partFiles.every(p => p.bytes <= options.targetBytes && (!p.gt7 || p.gt7.ok));
-
-        rawSizeEl.textContent = formatBytes(rawBytes);
-        fullSizeEl.textContent = formatBytes(fullBytes);
-        partsCountEl.textContent = String(partFiles.length);
-        largestPartEl.textContent = formatBytes(largest);
-        usedSlicesEl.textContent = String(result.slices);
-        resultStatusEl.innerHTML = passed ? '<span class="ok">OK</span>' : '<span class="ng">一部超過</span>';
-
-        downloadFullBtn.disabled = false;
-        downloadZipBtn.disabled = partFiles.length === 0;
-        copyBtn.disabled = false;
-        showFullBtn.disabled = false;
-        showCombinedBtn.disabled = false;
-        showSelectedBtn.disabled = partFiles.length === 0;
-
-        statusEl.textContent = passed
-          ? `完了。${partFiles.length}個のSVGに分割し、すべてGT7向け条件を通過しました。`
-          : "完了。ただし一部のSVGがGT7向け条件に未達です。ログと分割一覧を確認してください。";
-      } catch (error) {
-        console.error(error);
-        statusEl.textContent = "エラーが発生しました。最大サイズや色数を下げて試してください。";
-      }
-
-      setBusy(false);
-    });
-
-    downloadFullBtn.addEventListener("click", () => {
-      if (!fullSvg) return;
-      downloadText("full-vectorized.svg", fullSvg, "image/svg+xml");
-    });
-
-    downloadZipBtn.addEventListener("click", () => {
-      if (!partFiles.length) return;
-      const files = partFiles.map(part => ({ name: part.name, text: part.svg }));
-      const zipBlob = createZipBlob(files);
-      downloadBlob("gt7-svg-parts.zip", zipBlob);
-      statusEl.textContent = `ZIPを作成しました。${partFiles.length}個のSVGをまとめています。`;
-    });
-
-    copyBtn.addEventListener("click", async () => {
-      if (!displayedSvg) return;
-      await navigator.clipboard.writeText(displayedSvg);
-      statusEl.textContent = "表示中のSVGコードをコピーしました。";
-    });
-
-    showFullBtn.addEventListener("click", () => {
-      if (!fullSvg) return;
-      showSvg(fullSvg, "完成SVGを表示しました。");
-      clearActivePartCards();
-    });
-
-    showCombinedBtn.addEventListener("click", () => {
-      if (!combinedPartsSvg) return;
-      showSvg(combinedPartsSvg, "分割SVGをすべて重ねた合成プレビューを表示しました。");
-      clearActivePartCards();
-    });
-
-    showSelectedBtn.addEventListener("click", () => {
-      if (!partFiles.length) return;
-      selectPart(selectedPartIndex);
-    });
-
-    async function vectorizeAndSplit(img, options) {
-      const base = prepareLabels(img, options);
-      const width = base.width;
-      const height = base.height;
-
-      const fullPaths = buildPathsForTile(
-        base.labels, width, height, base.palette,
-        0, width, options.minArea, options.simplify, options.shortColor
-      );
-      fullPaths.sort((a, b) => b.area - a.area);
-
-      const rawFullResult = makeRawSvg(width, height, fullPaths);
-      const fullResult = makeSvg(width, height, fullPaths);
-      appendLog(`SVG生成: ${formatBytes(byteSize(rawFullResult.svg))} / path:${fullPaths.length}`);
-      appendLog(`SVGOMG風軽量化: ${formatBytes(byteSize(rawFullResult.svg))} → ${formatBytes(byteSize(fullResult.svg))}`);
-      if (options.gt7Check) {
-        const fullCheck = checkGt7Compatibility(fullResult.svg, options.targetBytes, false);
-        appendGt7CheckLog("軽量化後SVG", fullCheck, false);
-      }
-
-      if (!options.split) {
-        appendLog("分割OFF: 完成SVGをそのまま出力しました。");
-        const single = {
-          name: "part-001.svg",
-          svg: fullResult.svg,
-          inner: fullResult.inner,
-          bytes: byteSize(fullResult.svg),
-          gt7: options.gt7Check ? checkGt7Compatibility(fullResult.svg, options.targetBytes, true) : null,
-          index: 1,
-          slice: 1,
-          totalSlices: 1,
-          pathCount: fullPaths.length
-        };
-        return {
-          rawFullSvg: rawFullResult.svg,
-          fullSvg: fullResult.svg,
-          combinedSvg: makeCombinedSvg(width, height, [single]),
-          parts: [single],
-          slices: 1,
-          width,
-          height
-        };
-      }
-
-      const sliceCandidates = buildSliceCandidates(options.maxSlices);
-      let best = null;
-
-      for (const slices of sliceCandidates) {
-        statusEl.textContent = `分割テスト中... 縦スライス ${slices}`;
-        await waitFrame();
-
-        const parts = makeSplitPartsFromSlices(
-          base.labels, width, height, base.palette, slices, options
-        );
-        const largest = parts.reduce((m, p) => Math.max(m, p.bytes), 0);
-        const partCountOk = parts.length <= options.maxParts;
-        const passed = partCountOk && parts.every(p => p.bytes <= options.targetBytes && (!p.gt7 || p.gt7.ok));
-
-        appendLog(`${passed ? "OK" : "NG"} / スライス:${slices} / 分割数:${parts.length}/${options.maxParts} / 最大:${formatBytes(largest)}`);
-
-        const candidate = {
-          rawFullSvg: rawFullResult.svg,
-          fullSvg: fullResult.svg,
-          combinedSvg: makeCombinedSvg(width, height, parts),
-          parts,
-          slices,
-          largest,
-          width,
-          height
-        };
-
-        if (!best || largest < best.largest) best = candidate;
-        if (passed) return candidate;
-      }
-
-      return best;
-    }
-
-    function buildSliceCandidates(maxSlices) {
-      const base = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 30, 36, 42, 48, 54, 60];
-      const values = base.filter(v => v <= maxSlices);
-      if (!values.includes(maxSlices)) values.push(maxSlices);
-      return Array.from(new Set(values)).sort((a, b) => a - b);
-    }
-
-    function makeSplitPartsFromSlices(labels, width, height, palette, slices, options) {
-      const groupList = [];
-
-      for (let s = 0; s < slices; s++) {
-        const x0 = Math.floor(width * s / slices);
-        const x1 = Math.floor(width * (s + 1) / slices);
-
-        const paths = buildPathsForTile(
-          labels, width, height, palette,
-          x0, x1, options.minArea, options.simplify, options.shortColor
-        );
-        paths.sort((a, b) => b.area - a.area);
-
-        const groups = splitPathsByTargetBytes(width, height, paths, options.targetBytes);
-
-        for (const group of groups) {
-          groupList.push({
-            paths: group,
-            slice: s + 1,
-            totalSlices: slices
-          });
-        }
-      }
-
-      const limitedGroups = groupList.length > options.maxParts
-        ? mergeGroupListToMaxParts(width, height, groupList, options.maxParts)
-        : groupList;
-
-      if (groupList.length > options.maxParts) {
-        appendLog(`  分割数調整: ${groupList.length} → ${limitedGroups.length}個へ再結合`);
-      }
-
-      const allParts = [];
-      let partIndex = 1;
-
-      for (const entry of limitedGroups) {
-        const made = makeSvg(width, height, entry.paths);
-        const check = options.gt7Check ? checkGt7Compatibility(made.svg, options.targetBytes, true) : null;
-        allParts.push({
-          name: `part-${String(partIndex).padStart(3, "0")}.svg`,
-          svg: made.svg,
-          inner: made.inner,
-          bytes: byteSize(made.svg),
-          gt7: check,
-          index: partIndex,
-          slice: entry.slice,
-          totalSlices: slices,
-          pathCount: entry.paths.length
-        });
-        partIndex++;
-      }
-
-      return allParts;
-    }
-
-    function mergeGroupListToMaxParts(width, height, groups, maxParts) {
-      const merged = groups.map(g => ({ ...g, paths: g.paths.slice() }));
-
-      while (merged.length > maxParts) {
-        let bestIndex = 0;
-        let bestBytes = Infinity;
-
-        for (let i = 0; i < merged.length - 1; i++) {
-          const paths = merged[i].paths.concat(merged[i + 1].paths);
-          const bytes = byteSize(makeSvg(width, height, paths).svg);
-          if (bytes < bestBytes) {
-            bestBytes = bytes;
-            bestIndex = i;
-          }
-        }
-
-        merged[bestIndex] = {
-          paths: merged[bestIndex].paths.concat(merged[bestIndex + 1].paths),
-          slice: merged[bestIndex].slice,
-          totalSlices: merged[bestIndex].totalSlices
-        };
-        merged.splice(bestIndex + 1, 1);
-      }
-
-      return merged;
-    }
-
-    function splitPathsByTargetBytes(width, height, paths, targetBytes) {
-      const groups = [];
-      let current = [];
-
-      for (const path of paths) {
-        if (current.length === 0) {
-          current.push(path);
-          continue;
-        }
-        const test = current.concat(path);
-        const testBytes = byteSize(makeSvg(width, height, test).svg);
-
-        if (testBytes > targetBytes) {
-          groups.push(current);
-          current = [path];
-        } else {
-          current = test;
-        }
-      }
-
-      if (current.length > 0) groups.push(current);
-      return groups;
-    }
-
-    function prepareLabels(img, options) {
-      const size = fitSize(img.naturalWidth, img.naturalHeight, options.maxSide);
-      const width = size.width;
-      const height = size.height;
-
-      const canvas = document.createElement("canvas");
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext("2d", { willReadFrequently: true });
-      ctx.clearRect(0, 0, width, height);
-      ctx.drawImage(img, 0, 0, width, height);
-
-      sourceCanvas.width = width;
-      sourceCanvas.height = height;
-      sourceCanvas.getContext("2d").drawImage(canvas, 0, 0);
-
-      const imageData = ctx.getImageData(0, 0, width, height);
-      const pixels = imageData.data;
-      const palette = buildPaletteKMeans(pixels, width, height, options.colors);
-      const labels = assignLabels(pixels, width, height, palette);
-
-      return { width, height, labels, palette };
-    }
-
-    function buildPathsForTile(labels, width, height, palette, xStart, xEnd, minArea, simplify, shortColor) {
-      const total = width * height;
-      const visited = new Uint8Array(total);
-      const inComponent = new Uint8Array(total);
-      const paths = [];
-
-      for (let y = 0; y < height; y++) {
-        for (let x = xStart; x < xEnd; x++) {
-          const i = y * width + x;
-          if (visited[i]) continue;
-
-          const label = labels[i];
-          if (label < 0) {
-            visited[i] = 1;
-            continue;
-          }
-
-          const component = floodFillComponentTile(
-            labels, visited, inComponent, width, height,
-            i, label, xStart, xEnd
-          );
-
-          if (component.length >= minArea) {
-            const loops = componentToLoops(component, inComponent, width, height, simplify);
-            if (loops.length > 0) {
-              const d = loopsToCompactPathD(loops);
-              if (d) {
-                paths.push({
-                  d,
-                  fill: rgbToHex(palette[label], shortColor),
-                  area: component.length
-                });
-              }
-            }
-          }
-
-          for (const idx of component) inComponent[idx] = 0;
-        }
-      }
-
-      return paths;
-    }
-
-    function floodFillComponentTile(labels, visited, inComponent, width, height, start, label, xStart, xEnd) {
-      const stack = [start];
-      const component = [];
-      visited[start] = 1;
-      inComponent[start] = 1;
-
-      while (stack.length) {
-        const idx = stack.pop();
-        component.push(idx);
-
-        const x = idx % width;
-        const y = Math.floor(idx / width);
-
-        tryPush(idx - width, y > 0, x);
-        tryPush(idx + width, y < height - 1, x);
-        tryPush(idx - 1, x > xStart, x - 1);
-        tryPush(idx + 1, x < xEnd - 1, x + 1);
-      }
-
-      function tryPush(next, ok, nextX) {
-        if (!ok) return;
-        if (nextX < xStart || nextX >= xEnd) return;
-        if (visited[next]) return;
-        if (labels[next] !== label) return;
-        visited[next] = 1;
-        inComponent[next] = 1;
-        stack.push(next);
-      }
-
-      return component;
-    }
-
-    function componentToLoops(component, inComponent, width, height, simplify) {
-      const edgeMap = new Map();
-      let edgeCount = 0;
-
-      function addEdge(x1, y1, x2, y2) {
-        const key = `${x1},${y1}`;
-        const arr = edgeMap.get(key) || [];
-        arr.push([x2, y2]);
-        edgeMap.set(key, arr);
-        edgeCount++;
-      }
-
-      for (const idx of component) {
-        const x = idx % width;
-        const y = Math.floor(idx / width);
-
-        if (y === 0 || !inComponent[idx - width]) addEdge(x, y, x + 1, y);
-        if (x === width - 1 || !inComponent[idx + 1]) addEdge(x + 1, y, x + 1, y + 1);
-        if (y === height - 1 || !inComponent[idx + width]) addEdge(x + 1, y + 1, x, y + 1);
-        if (x === 0 || !inComponent[idx - 1]) addEdge(x, y + 1, x, y);
-      }
-
-      const loops = [];
-
-      while (edgeCount > 0) {
-        let startKey = null;
-        for (const [key, arr] of edgeMap) {
-          if (arr.length) { startKey = key; break; }
-        }
-        if (!startKey) break;
-
-        const [sx, sy] = startKey.split(",").map(Number);
-        const loop = [[sx, sy]];
-        let cx = sx;
-        let cy = sy;
-        let safety = 0;
-
-        while (safety++ < 300000) {
-          const key = `${cx},${cy}`;
-          const arr = edgeMap.get(key);
-          if (!arr || arr.length === 0) break;
-
-          const [nx, ny] = arr.pop();
-          edgeCount--;
-          loop.push([nx, ny]);
-          cx = nx;
-          cy = ny;
-
-          if (cx === sx && cy === sy) break;
-        }
-
-        if (loop.length >= 4) {
-          const cleaned = removeCollinear(loop);
-          const simple = simplify > 0 ? simplifyClosedPolyline(cleaned, simplify) : cleaned;
-          if (simple.length >= 4) loops.push(simple);
-        }
-      }
-
-      return loops;
-    }
-
-    function removeCollinear(points) {
-      if (points.length <= 4) return points;
-      const closed = points[0][0] === points[points.length - 1][0] && points[0][1] === points[points.length - 1][1];
-      const src = closed ? points.slice(0, -1) : points.slice();
-      const out = [];
-
-      for (let i = 0; i < src.length; i++) {
-        const prev = src[(i - 1 + src.length) % src.length];
-        const curr = src[i];
-        const next = src[(i + 1) % src.length];
-        const dx1 = curr[0] - prev[0];
-        const dy1 = curr[1] - prev[1];
-        const dx2 = next[0] - curr[0];
-        const dy2 = next[1] - curr[1];
-        if (dx1 * dy2 !== dy1 * dx2) out.push(curr);
-      }
-
-      if (out.length > 0) out.push(out[0]);
-      return out;
-    }
-
-    function simplifyClosedPolyline(points, tolerance) {
-      if (points.length <= 4) return points;
-      const closed = points[0][0] === points[points.length - 1][0] && points[0][1] === points[points.length - 1][1];
-      const src = closed ? points.slice(0, -1) : points.slice();
-
-      let startIndex = 0;
-      for (let i = 1; i < src.length; i++) {
-        if (src[i][0] < src[startIndex][0]) startIndex = i;
-      }
-
-      const rotated = src.slice(startIndex).concat(src.slice(0, startIndex));
-      rotated.push(rotated[0]);
-      const simplified = rdp(rotated, tolerance);
-
-      if (simplified[0][0] !== simplified[simplified.length - 1][0] || simplified[0][1] !== simplified[simplified.length - 1][1]) {
-        simplified.push(simplified[0]);
-      }
-
-      return simplified;
-    }
-
-    function rdp(points, epsilon) {
-      if (points.length < 3) return points;
-      let dmax = 0;
-      let index = 0;
-      const end = points.length - 1;
-
-      for (let i = 1; i < end; i++) {
-        const d = perpendicularDistance(points[i], points[0], points[end]);
-        if (d > dmax) { index = i; dmax = d; }
-      }
-
-      if (dmax > epsilon) {
-        const left = rdp(points.slice(0, index + 1), epsilon);
-        const right = rdp(points.slice(index), epsilon);
-        return left.slice(0, -1).concat(right);
-      }
-
-      return [points[0], points[end]];
-    }
-
-    function perpendicularDistance(p, a, b) {
-      const dx = b[0] - a[0];
-      const dy = b[1] - a[1];
-      if (dx === 0 && dy === 0) return Math.hypot(p[0] - a[0], p[1] - a[1]);
-      return Math.abs(dy * p[0] - dx * p[1] + b[0] * a[1] - b[1] * a[0]) / Math.hypot(dx, dy);
-    }
-
-    function loopsToCompactPathD(loops) {
-      if (currentOptimizer.smartPath) {
-        const absolute = loopsToAbsolutePathD(loops);
-        const relative = loopsToRelativePathD(loops);
-        const hv = loopsToHvRelativePathD(loops);
-        return shortestString([absolute, relative, hv]);
-      }
-
-      return currentOptimizer.relativePath
-        ? loopsToRelativePathD(loops)
-        : loopsToAbsolutePathD(loops);
-    }
-
-    function shortestString(items) {
-      let best = "";
-      for (const item of items) {
-        if (!item) continue;
-        if (!best || item.length < best.length) best = item;
-      }
-      return best;
-    }
-
-    function loopsToAbsolutePathD(loops) {
-      const parts = [];
-      for (const loop of loops) {
-        if (loop.length < 4) continue;
-        const first = loop[0];
-        const coords = [`M${num(first[0])} ${num(first[1])}`];
-        for (let i = 1; i < loop.length - 1; i++) {
-          const p = loop[i];
-          coords.push(`${num(p[0])} ${num(p[1])}`);
-        }
-        coords.push("Z");
-        parts.push(coords.join(" "));
-      }
-      return parts.join("");
-    }
-
-    function loopsToRelativePathD(loops) {
-      const parts = [];
-
-      for (const loop of loops) {
-        if (loop.length < 4) continue;
-
-        const first = loop[0];
-        const rel = [];
-        let px = first[0];
-        let py = first[1];
-
-        for (let i = 1; i < loop.length - 1; i++) {
-          const p = loop[i];
-          const dx = p[0] - px;
-          const dy = p[1] - py;
-          rel.push(`${num(dx)} ${num(dy)}`);
-          px = p[0];
-          py = p[1];
-        }
-
-        parts.push(`M${num(first[0])} ${num(first[1])}` + (rel.length ? `l${rel.join(" ")}` : "") + "Z");
-      }
-
-      return parts.join("");
-    }
-
-    function loopsToHvRelativePathD(loops) {
-      const parts = [];
-
-      for (const loop of loops) {
-        if (loop.length < 4) continue;
-
-        const first = loop[0];
-        let d = `M${num(first[0])} ${num(first[1])}`;
-        let px = first[0];
-        let py = first[1];
-
-        for (let i = 1; i < loop.length - 1; i++) {
-          const p = loop[i];
-          const dx = p[0] - px;
-          const dy = p[1] - py;
-
-          if (dy === 0 && dx !== 0) {
-            d += `h${num(dx)}`;
-          } else if (dx === 0 && dy !== 0) {
-            d += `v${num(dy)}`;
-          } else if (dx !== 0 || dy !== 0) {
-            d += `l${num(dx)} ${num(dy)}`;
-          }
-
-          px = p[0];
-          py = p[1];
-        }
-
-        d += "Z";
-        parts.push(d);
-      }
-
-      return parts.join("");
-    }
-
-    function makeRawSvg(width, height, paths) {
-      const body = paths.map(p => `  <path fill="${p.fill}" fill-rule="evenodd" d="${p.d}" />`).join("\n");
-      const svg = `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">\n${body}\n</svg>`;
-      return { svg, inner: body };
-    }
-
-    function makeSvg(width, height, paths) {
-      const outputPaths = currentOptimizer.mergeSameFill ? mergePathsByFill(paths) : paths;
-      const bleed = Number(currentOptimizer.bleedWidth || 0);
-      const inner = outputPaths.map(p => {
-        const stroke = bleed > 0 ? ` stroke="${p.fill}"` : "";
-        return `<path fill="${p.fill}"${stroke} d="${p.d}"/>`;
-      }).join("");
-      const sizeAttrs = currentOptimizer.removeWidthHeight ? "" : ` width="${width}" height="${height}"`;
-      const groupAttrs = bleed > 0
-        ? ` fill-rule="evenodd" stroke-width="${numAttr(bleed)}" stroke-linejoin="round"`
-        : ` fill-rule="evenodd"`;
-      const svg = finalMinifySvg(`<svg xmlns="http://www.w3.org/2000/svg"${sizeAttrs} viewBox="0 0 ${width} ${height}"><g${groupAttrs}>${inner}</g></svg>`);
-      return { svg, inner };
-    }
-
-    function makeCombinedSvg(width, height, parts) {
-      const inner = parts.map(p => p.inner || "").join("");
-      const sizeAttrs = currentOptimizer.removeWidthHeight ? "" : ` width="${width}" height="${height}"`;
-      const bleed = Number(currentOptimizer.bleedWidth || 0);
-      const groupAttrs = bleed > 0
-        ? ` fill-rule="evenodd" stroke-width="${numAttr(bleed)}" stroke-linejoin="round"`
-        : ` fill-rule="evenodd"`;
-      return finalMinifySvg(`<svg xmlns="http://www.w3.org/2000/svg"${sizeAttrs} viewBox="0 0 ${width} ${height}"><g${groupAttrs}>${inner}</g></svg>`);
-    }
-
-    function mergePathsByFill(paths) {
-      const map = new Map();
-      for (const p of paths) {
-        if (!map.has(p.fill)) {
-          map.set(p.fill, { fill: p.fill, d: "", area: 0 });
-        }
-        const item = map.get(p.fill);
-        item.d += item.d ? " " + p.d : p.d;
-        item.area += p.area || 0;
-      }
-      return Array.from(map.values()).sort((a, b) => (b.area || 0) - (a.area || 0));
-    }
-
-    function finalMinifySvg(svg) {
-      return String(svg)
-        .replace(/<!--([\s\S]*?)-->/g, "")
-        .replace(/<\?xml[\s\S]*?\?>/g, "")
-        .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
-        .replace(/>\s+</g, "><")
-        .replace(/\s{2,}/g, " ")
-        .replace(/\s\/>/g, "/>")
-        .trim();
-    }
-
-    function buildPaletteKMeans(pixels, width, height, k) {
-      const samples = [];
-      const total = width * height;
-      const step = Math.max(1, Math.floor(total / 22000));
-
-      for (let i = 0; i < total; i += step) {
-        const p = i * 4;
-        if (pixels[p + 3] < 16) continue;
-        samples.push([pixels[p], pixels[p + 1], pixels[p + 2]]);
-      }
-
-      if (samples.length === 0) return [[0, 0, 0]];
-      k = Math.min(k, samples.length);
-
-      const centers = [];
-      for (let i = 0; i < k; i++) {
-        const index = Math.floor((i / k) * samples.length);
-        centers.push([...samples[index]]);
-      }
-
-      for (let iter = 0; iter < 10; iter++) {
-        const sums = Array.from({ length: k }, () => [0, 0, 0, 0]);
-        for (const s of samples) {
-          const id = nearestColorIndex(s[0], s[1], s[2], centers);
-          sums[id][0] += s[0];
-          sums[id][1] += s[1];
-          sums[id][2] += s[2];
-          sums[id][3]++;
-        }
-        for (let i = 0; i < k; i++) {
-          if (sums[i][3] === 0) continue;
-          centers[i][0] = sums[i][0] / sums[i][3];
-          centers[i][1] = sums[i][1] / sums[i][3];
-          centers[i][2] = sums[i][2] / sums[i][3];
-        }
-      }
-
-      return centers.map(c => [Math.round(c[0]), Math.round(c[1]), Math.round(c[2])]);
-    }
-
-    function assignLabels(pixels, width, height, palette) {
-      const total = width * height;
-      const labels = new Int16Array(total);
-
-      for (let i = 0; i < total; i++) {
-        const p = i * 4;
-        if (pixels[p + 3] < 16) {
-          labels[i] = -1;
-          continue;
-        }
-        labels[i] = nearestColorIndex(pixels[p], pixels[p + 1], pixels[p + 2], palette);
-      }
-
-      return labels;
-    }
-
-    function nearestColorIndex(r, g, b, palette) {
-      let best = 0;
-      let bestDist = Infinity;
-      for (let i = 0; i < palette.length; i++) {
-        const c = palette[i];
-        const dr = r - c[0];
-        const dg = g - c[1];
-        const db = b - c[2];
-        const dist = dr * dr + dg * dg + db * db;
-        if (dist < bestDist) { bestDist = dist; best = i; }
-      }
-      return best;
-    }
-
-    function rgbToHex(rgb, shortColor) {
-      const hex = rgb.map(v => {
-        const s = Math.max(0, Math.min(255, Math.round(v))).toString(16);
-        return s.length === 1 ? "0" + s : s;
-      }).join("");
-      const h = hex.toLowerCase();
-
-      if (shortColor && h[0] === h[1] && h[2] === h[3] && h[4] === h[5]) {
-        return `#${h[0]}${h[2]}${h[4]}`;
-      }
-      return `#${h}`;
-    }
-
-
-    function numAttr(value) {
-      let n = Number(value);
-      if (!Number.isFinite(n)) return "0";
-      let s = n.toFixed(2).replace(/\.?0+$/, "");
-      if (s === "-0") s = "0";
-      return s.replace(/^(-?)0\./, "$1.");
-    }
-
-    function num(value) {
-      const precision = clamp(Number(currentOptimizer.precision || 0), 0, 3);
-      let n = Number(value);
-      if (!Number.isFinite(n)) return "0";
-      if (precision <= 0) return String(Math.round(n));
-      let s = n.toFixed(precision).replace(/\.?0+$/, "");
-      if (s === "-0") s = "0";
-      return s.replace(/^(-?)0\./, "$1.");
-    }
-
-    function loadImage(file) {
-      return new Promise((resolve, reject) => {
-        const url = URL.createObjectURL(file);
-        const img = new Image();
-        img.onload = () => { URL.revokeObjectURL(url); resolve(img); };
-        img.onerror = reject;
-        img.src = url;
-      });
-    }
-
-    function drawSourceImage() {
-      const size = fitSize(loadedImage.naturalWidth, loadedImage.naturalHeight, Number(maxSideInput.value));
-      sourceCanvas.width = size.width;
-      sourceCanvas.height = size.height;
-      const ctx = sourceCanvas.getContext("2d", { willReadFrequently: true });
-      ctx.clearRect(0, 0, size.width, size.height);
-      ctx.drawImage(loadedImage, 0, 0, size.width, size.height);
-    }
-
-    function fitSize(w, h, maxSide) {
-      const scale = Math.min(1, maxSide / Math.max(w, h));
-      return {
-        width: Math.max(1, Math.round(w * scale)),
-        height: Math.max(1, Math.round(h * scale))
-      };
-    }
-
-
-    function checkGt7Compatibility(svg, targetBytes, requireSize) {
-      const errors = [];
-      const warnings = [];
-      const text = String(svg || "");
-      const bytes = byteSize(text);
-
-      if (requireSize && bytes > targetBytes) {
-        errors.push(`15KB制限超過: ${formatBytes(bytes)}`);
-      }
-
-      if (!/<svg\b/i.test(text)) {
-        errors.push("SVGルートがありません");
-      }
-
-      if (!/viewBox=/i.test(text)) {
-        warnings.push("viewBoxがありません。GT7上で表示位置がずれる可能性があります");
-      }
-
-      if (/<image\b/i.test(text) || /data:image\//i.test(text)) {
-        errors.push("埋め込みビットマップ画像が含まれています");
-      }
-
-      if (/<text\b/i.test(text)) {
-        errors.push("text要素があります。GT7では文字はアウトライン化が必要です");
-      }
-
-      if (/<script\b/i.test(text) || /<foreignObject\b/i.test(text)) {
-        errors.push("script/foreignObjectはGT7向けではありません");
-      }
-
-      if (/<filter\b/i.test(text) || /<fe[A-Z][A-Za-z]*\b/.test(text) || /\bfilter=/i.test(text)) {
-        errors.push("filter効果が含まれています");
-      }
-
-      if (/mix-blend-mode|background-blend-mode|\bblend-mode/i.test(text)) {
-        errors.push("特殊ブレンドモードが含まれています");
-      }
-
-      if (/<style\b/i.test(text) || /\bclass=/i.test(text) || /\bstyle=/i.test(text)) {
-        warnings.push("CSS/style/classがあります。GT7では属性直書きの方が安全です");
-      }
-
-      if (/<linearGradient\b|<radialGradient\b|<pattern\b|<mask\b|<clipPath\b/i.test(text) || /url\(#/i.test(text)) {
-        warnings.push("gradient/pattern/mask/clipPath/url参照があります。GT7では単純なpath+fillが安全です");
-      }
-
-      try {
-        const doc = new DOMParser().parseFromString(text, "image/svg+xml");
-        if (doc.querySelector("parsererror")) {
-          errors.push("XMLとして解析できません");
-        } else {
-          const allowedTags = new Set(["svg", "g", "path"]);
-          const allowedAttrs = new Set(["xmlns", "viewBox", "viewbox", "version", "width", "height", "fill", "fill-rule", "d", "stroke", "stroke-width", "stroke-linejoin", "stroke-linecap", "stroke-miterlimit"]);
-          const all = [doc.documentElement, ...Array.from(doc.documentElement.querySelectorAll("*"))];
-          for (const el of all) {
-            const tag = el.tagName;
-            if (!allowedTags.has(tag)) warnings.push(`GT7安全セット外の要素: <${tag}>`);
-            for (const attr of Array.from(el.attributes || [])) {
-              if (!allowedAttrs.has(attr.name)) warnings.push(`GT7安全セット外の属性: ${attr.name}`);
-            }
-          }
-        }
-      } catch (error) {
-        errors.push("SVG解析中にエラーが発生しました");
-      }
-
-      return { ok: errors.length === 0, errors, warnings, bytes };
-    }
-
-    function appendGt7CheckLog(label, check, requireSize) {
-      const status = check.ok ? "OK" : "NG";
-      appendLog(`GT7チェック ${label}: ${status} / ${formatBytes(check.bytes)}${requireSize ? "" : " / 分割前サイズは15KB超過でもOK"}`);
-      for (const e of check.errors) appendLog(`  ERROR: ${e}`);
-      for (const w of check.warnings.slice(0, 4)) appendLog(`  WARN: ${w}`);
-      if (check.warnings.length > 4) appendLog(`  WARN: 他 ${check.warnings.length - 4}件`);
-    }
-
-    function renderPartsList(parts) {
-      partsList.innerHTML = "";
-      const targetBytes = Math.floor(clamp(Number(targetKbInput.value), 4, 15) * 1024);
-
-      for (let i = 0; i < parts.length; i++) {
-        const part = parts[i];
-        const ok = part.bytes <= targetBytes;
-        const card = document.createElement("div");
-        card.className = "part-card" + (i === selectedPartIndex ? " active" : "");
-        card.dataset.index = String(i);
-        const gt7Class = !part.gt7 ? "warn" : (part.gt7.ok ? "ok" : "ng");
-        const gt7Text = !part.gt7 ? "未チェック" : (part.gt7.ok ? "OK" : "NG");
-        const gt7Detail = part.gt7 && !part.gt7.ok ? part.gt7.errors.join(" / ") : "";
-        card.innerHTML = `
-          <b>${part.name}</b><br>
-          サイズ: <span class="${ok ? "ok" : "ng"}">${formatBytes(part.bytes)}</span><br>
-          GT7: <span class="${gt7Class}">${gt7Text}</span><br>
-          <span class="small">${gt7Detail}</span>
-          path数: ${part.pathCount}<br>
-          スライス: ${part.slice}/${part.totalSlices}<br>
-        `;
-
-        const showBtn = document.createElement("button");
-        showBtn.textContent = "プレビュー";
-        showBtn.className = "secondary";
-        showBtn.addEventListener("click", () => selectPart(i));
-
-        const dlBtn = document.createElement("button");
-        dlBtn.textContent = "DL";
-        dlBtn.addEventListener("click", () => downloadText(part.name, part.svg, "image/svg+xml"));
-
-        card.appendChild(showBtn);
-        card.appendChild(document.createTextNode(" "));
-        card.appendChild(dlBtn);
-        partsList.appendChild(card);
-      }
-    }
-
-    function selectPart(index) {
-      selectedPartIndex = clamp(index, 0, Math.max(0, partFiles.length - 1));
-      const part = partFiles[selectedPartIndex];
-      if (!part) return;
-      showSvg(part.svg, `${part.name} を表示しました。`);
-      clearActivePartCards();
-      const card = partsList.querySelector(`[data-index="${selectedPartIndex}"]`);
-      if (card) card.classList.add("active");
-    }
-
-    function showSvg(svg, message) {
-      displayedSvg = svg;
-      renderSvgPreview(svg);
-      svgOutput.value = svg;
-      statusEl.textContent = message;
-    }
-
-    function renderSvgPreview(svg) {
-      if (previewUrl) {
-        URL.revokeObjectURL(previewUrl);
-        previewUrl = "";
-      }
-
-      svgPreview.innerHTML = "";
-
-      const img = document.createElement("img");
-      img.alt = "SVG preview";
-
-      const previewSvg = ensurePreviewSize(svg);
-      const blob = new Blob([previewSvg], { type: "image/svg+xml;charset=utf-8" });
-      previewUrl = URL.createObjectURL(blob);
-
-      img.onerror = () => {
-        // 画像としてのSVGプレビューに失敗した場合だけ、インラインSVGへフォールバック。
-        svgPreview.innerHTML = previewSvg;
-      };
-
-      img.src = previewUrl;
-      svgPreview.appendChild(img);
-    }
-
-    function ensurePreviewSize(svg) {
-      // ダウンロード用SVGは軽量化のためwidth/heightを省く場合がある。
-      // プレビューではブラウザが透明/0サイズ扱いしないよう、表示用だけwidth/heightを付ける。
-      if (!fullWidth || !fullHeight) return svg;
-      return svg.replace(
-        /<svg\b([^>]*)>/i,
-        (match, attrs) => {
-          let next = attrs;
-          if (!/\bwidth=/.test(next)) next += ` width="${fullWidth}"`;
-          if (!/\bheight=/.test(next)) next += ` height="${fullHeight}"`;
-          return `<svg${next}>`;
-        }
-      );
-    }
-
-    function clearActivePartCards() {
-      partsList.querySelectorAll(".part-card").forEach(card => card.classList.remove("active"));
-    }
-
-    function resetOutputs(disableVectorize = true) {
-      rawFullSvg = "";
-      fullSvg = "";
-      combinedPartsSvg = "";
-      partFiles = [];
-      displayedSvg = "";
-      selectedPartIndex = 0;
-      fullWidth = 0;
-      fullHeight = 0;
-      if (previewUrl) { URL.revokeObjectURL(previewUrl); previewUrl = ""; }
-      svgPreview.innerHTML = "";
-      svgOutput.value = "";
-      logOutput.value = "";
-      partsList.innerHTML = "";
-      rawSizeEl.textContent = "-";
-      fullSizeEl.textContent = "-";
-      partsCountEl.textContent = "-";
-      largestPartEl.textContent = "-";
-      usedSlicesEl.textContent = "-";
-      resultStatusEl.textContent = "-";
-      downloadFullBtn.disabled = true;
-      downloadZipBtn.disabled = true;
-      copyBtn.disabled = true;
-      showFullBtn.disabled = true;
-      showCombinedBtn.disabled = true;
-      showSelectedBtn.disabled = true;
-      if (disableVectorize) vectorizeBtn.disabled = true;
-    }
-
-    function setBusy(isBusy) {
-      vectorizeBtn.disabled = isBusy;
-    }
-
-    function appendLog(text) {
-      logOutput.value += text + "\n";
-      logOutput.scrollTop = logOutput.scrollHeight;
-    }
-
-    function downloadText(filename, text, type) {
-      const blob = new Blob([text], { type });
-      downloadBlob(filename, blob);
-    }
-
-    function downloadBlob(filename, blob) {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    }
-
-    function byteSize(text) {
-      return new Blob([text]).size;
-    }
-
-    function formatBytes(bytes) {
-      if (bytes < 1024) return `${bytes} B`;
-      return `${(bytes / 1024).toFixed(1)} KB`;
-    }
-
-    function clamp(value, min, max) {
-      return Math.max(min, Math.min(max, value));
-    }
-
-    function waitFrame() {
-      return new Promise(resolve => requestAnimationFrame(resolve));
-    }
-
-    function createZipBlob(files) {
-      const encoder = new TextEncoder();
-      const localParts = [];
-      const centralParts = [];
-      let offset = 0;
-      const now = new Date();
-      const dosTime = ((now.getHours() & 31) << 11) | ((now.getMinutes() & 63) << 5) | Math.floor(now.getSeconds() / 2);
-      const dosDate = (((now.getFullYear() - 1980) & 127) << 9) | ((now.getMonth() + 1) << 5) | now.getDate();
-
-      for (const file of files) {
-        const nameBytes = encoder.encode(file.name);
-        const data = encoder.encode(file.text);
-        const crc = crc32(data);
-        const localHeader = new Uint8Array(30 + nameBytes.length);
-        const localView = new DataView(localHeader.buffer);
-
-        localView.setUint32(0, 0x04034b50, true);
-        localView.setUint16(4, 20, true);
-        localView.setUint16(6, 0x0800, true);
-        localView.setUint16(8, 0, true);
-        localView.setUint16(10, dosTime, true);
-        localView.setUint16(12, dosDate, true);
-        localView.setUint32(14, crc, true);
-        localView.setUint32(18, data.length, true);
-        localView.setUint32(22, data.length, true);
-        localView.setUint16(26, nameBytes.length, true);
-        localView.setUint16(28, 0, true);
-        localHeader.set(nameBytes, 30);
-
-        localParts.push(localHeader, data);
-
-        const centralHeader = new Uint8Array(46 + nameBytes.length);
-        const centralView = new DataView(centralHeader.buffer);
-        centralView.setUint32(0, 0x02014b50, true);
-        centralView.setUint16(4, 20, true);
-        centralView.setUint16(6, 20, true);
-        centralView.setUint16(8, 0x0800, true);
-        centralView.setUint16(10, 0, true);
-        centralView.setUint16(12, dosTime, true);
-        centralView.setUint16(14, dosDate, true);
-        centralView.setUint32(16, crc, true);
-        centralView.setUint32(20, data.length, true);
-        centralView.setUint32(24, data.length, true);
-        centralView.setUint16(28, nameBytes.length, true);
-        centralView.setUint16(30, 0, true);
-        centralView.setUint16(32, 0, true);
-        centralView.setUint16(34, 0, true);
-        centralView.setUint16(36, 0, true);
-        centralView.setUint32(38, 0, true);
-        centralView.setUint32(42, offset, true);
-        centralHeader.set(nameBytes, 46);
-        centralParts.push(centralHeader);
-
-        offset += localHeader.length + data.length;
-      }
-
-      const centralStart = offset;
-      const centralSize = centralParts.reduce((sum, part) => sum + part.length, 0);
-      const end = new Uint8Array(22);
-      const endView = new DataView(end.buffer);
-      endView.setUint32(0, 0x06054b50, true);
-      endView.setUint16(4, 0, true);
-      endView.setUint16(6, 0, true);
-      endView.setUint16(8, files.length, true);
-      endView.setUint16(10, files.length, true);
-      endView.setUint32(12, centralSize, true);
-      endView.setUint32(16, centralStart, true);
-      endView.setUint16(20, 0, true);
-
-      return new Blob([...localParts, ...centralParts, end], { type: "application/zip" });
-    }
-
-    let CRC_TABLE = null;
-
-    function crc32(data) {
-      if (!CRC_TABLE) CRC_TABLE = makeCrcTable();
-      let crc = 0xffffffff;
-      for (let i = 0; i < data.length; i++) {
-        crc = CRC_TABLE[(crc ^ data[i]) & 0xff] ^ (crc >>> 8);
-      }
-      return (crc ^ 0xffffffff) >>> 0;
-    }
-
-    function makeCrcTable() {
-      const table = new Uint32Array(256);
-      for (let n = 0; n < 256; n++) {
-        let c = n;
-        for (let k = 0; k < 8; k++) {
-          c = (c & 1) ? (0xedb88320 ^ (c >>> 1)) : (c >>> 1);
-        }
-        table[n] = c >>> 0;
-      }
-      return table;
-    }
-  </script>
+<script>
+const $=id=>document.getElementById(id);
+const fileInput=$('fileInput'),sourceCanvas=$('sourceCanvas'),svgPreview=$('svgPreview'),svgOutput=$('svgOutput'),logOutput=$('logOutput'),partsList=$('partsList');
+const vectorizeBtn=$('vectorizeBtn'),downloadFullBtn=$('downloadFullBtn'),downloadZipBtn=$('downloadZipBtn'),copyBtn=$('copyBtn'),showCombinedBtn=$('showCombinedBtn'),showFullBtn=$('showFullBtn');
+const statusEl=$('status'),fullSizeEl=$('fullSize'),partsCountEl=$('partsCount'),largestPartEl=$('largestPart'),gt7StatusEl=$('gt7Status'),pathCountEl=$('pathCount'),splitModeEl=$('splitMode');
+const inputs={targetKb:$('targetKbInput'),colors:$('colorsInput'),maxSide:$('maxSideInput'),minArea:$('minAreaInput'),simplify:$('simplifyInput'),precision:$('precisionInput'),labelSmooth:$('labelSmoothInput'),curveStrength:$('curveStrengthInput'),maxParts:$('maxPartsInput'),curve:$('curveInput'),bleed:$('bleedInput'),bleedWidth:$('bleedWidthInput'),shortColor:$('shortColorInput'),preserveOrder:$('preserveOrderInput')};
+let loadedImage=null,fullSvg='',combinedSvg='',partFiles=[],displayedSvg='',previewUrl='';
+bindRange(inputs.colors,$('colorsValue'));bindRange(inputs.maxSide,$('maxSideValue'));bindRange(inputs.minArea,$('minAreaValue'));bindRange(inputs.simplify,$('simplifyValue'));bindRange(inputs.curveStrength,$('curveStrengthValue'));
+function bindRange(input,out){input.addEventListener('input',()=>{out.textContent=input.value})}
+fileInput.addEventListener('change',async()=>{const f=fileInput.files[0];if(!f)return;loadedImage=await loadImage(f);resetOutputs();drawSourceImage();vectorizeBtn.disabled=false;statusEl.textContent='画像を読み込みました。高品質SVG化できます。'});
+vectorizeBtn.addEventListener('click',async()=>{if(!loadedImage)return;setBusy(true);resetOutputs(false);const opt=readOptions();try{statusEl.textContent='高品質モードでSVG生成中...';await waitFrame();const result=await runPipeline(loadedImage,opt);fullSvg=result.fullSvg;combinedSvg=result.combinedSvg;partFiles=result.parts;displayedSvg=combinedSvg||fullSvg;svgOutput.value=displayedSvg;renderSvgPreview(displayedSvg);renderPartsList(partFiles,opt);updateStats(result,opt);downloadFullBtn.disabled=false;downloadZipBtn.disabled=partFiles.length===0;copyBtn.disabled=false;showCombinedBtn.disabled=false;showFullBtn.disabled=false;statusEl.textContent=result.allPassed?'完了。分割後の全SVGがGT7目標サイズ内です。':'完了。ただし一部パートが目標サイズを超えています。最大分割数は60のため、色数/最小面積/パーツ分けを調整してください。'}catch(e){console.error(e);statusEl.textContent='エラーが発生しました。最大サイズや色数を少し下げて試してください。'}setBusy(false)});
+downloadFullBtn.addEventListener('click',()=>{if(fullSvg)downloadText('optimized-full.svg',fullSvg)});
+downloadZipBtn.addEventListener('click',()=>{if(!partFiles.length)return;const files=partFiles.map(p=>({name:p.name,text:p.svg}));const blob=makeZip(files);downloadBlob('gt7-svg-parts.zip',blob)});
+copyBtn.addEventListener('click',async()=>{if(!displayedSvg)return;await navigator.clipboard.writeText(displayedSvg);statusEl.textContent='表示中のSVGコードをコピーしました。'});
+showCombinedBtn.addEventListener('click',()=>{if(!combinedSvg)return;displayedSvg=combinedSvg;svgOutput.value=displayedSvg;renderSvgPreview(displayedSvg);statusEl.textContent='分割SVGを全部重ねた合成プレビューを表示しています。'});
+showFullBtn.addEventListener('click',()=>{if(!fullSvg)return;displayedSvg=fullSvg;svgOutput.value=displayedSvg;renderSvgPreview(displayedSvg);statusEl.textContent='軽量化後の全体SVGを表示しています。'});
+function readOptions(){return{targetBytes:Math.floor(clamp(Number(inputs.targetKb.value),4,15)*1024),colors:clamp(Number(inputs.colors.value),8,128),maxSide:clamp(Number(inputs.maxSide.value),700,3200),minArea:clamp(Number(inputs.minArea.value),1,120),simplify:clamp(Number(inputs.simplify.value),0,1.5),precision:clamp(Number(inputs.precision.value),0,2),labelSmooth:clamp(Number(inputs.labelSmooth.value),0,3),curveStrength:clamp(Number(inputs.curveStrength.value),0,1),maxParts:clamp(Number(inputs.maxParts.value),1,60),curve:inputs.curve.checked,bleed:inputs.bleed.checked,bleedWidth:clamp(Number(inputs.bleedWidth.value),0,2),shortColor:inputs.shortColor.checked,preserveOrder:inputs.preserveOrder.checked}}
+function resetOutputs(resetButtons=true){fullSvg='';combinedSvg='';partFiles=[];displayedSvg='';svgOutput.value='';logOutput.value='';partsList.innerHTML='';svgPreview.innerHTML='';fullSizeEl.textContent='-';partsCountEl.textContent='-';largestPartEl.textContent='-';gt7StatusEl.textContent='-';pathCountEl.textContent='-';splitModeEl.textContent='-';if(resetButtons){vectorizeBtn.disabled=true}downloadFullBtn.disabled=true;downloadZipBtn.disabled=true;copyBtn.disabled=true;showCombinedBtn.disabled=true;showFullBtn.disabled=true}
+function setBusy(v){vectorizeBtn.disabled=v;}
+async function runPipeline(img,opt){const base=prepareLabels(img,opt);appendLog(`画像解析: ${base.width}x${base.height}, 色数:${opt.colors}, 平滑化:${opt.labelSmooth}`);statusEl.textContent='輪郭抽出・曲線化中...';await waitFrame();let paths=buildPathsForTile(base,0,base.width,opt);paths.sort((a,b)=>b.area-a.area);const pathCount=paths.length;let fullSvgText=makeSvg(base.width,base.height,paths,opt).svg;fullSvgText=optimizeSvgText(fullSvgText,opt);appendLog(`SVGOMG風軽量化後の全体SVG: ${formatBytes(byteSize(fullSvgText))}, path:${pathCount}`);const wholeParts=splitPathsByTarget(base.width,base.height,paths,opt,'part');const wholeOk=wholeParts.length<=opt.maxParts&&wholeParts.every(p=>p.bytes<=opt.targetBytes);let chosenParts=wholeParts,mode='path分割';if(!wholeOk){appendLog('path分割だけでは収まらないため、重なり付きスライス分割を試します。');const tiled=await findBestTiledSplit(base,opt);if(tiled&&(!chosenParts.length||tiled.score<scoreParts(chosenParts,opt))){chosenParts=tiled.parts;mode=`重なり付きスライス ${tiled.slices}`}}chosenParts=chosenParts.slice(0,opt.maxParts);chosenParts.forEach((p,i)=>{p.name=`part-${String(i+1).padStart(3,'0')}.svg`;p.index=i+1});const combined=makeCombinedSvg(base.width,base.height,chosenParts);const largest=chosenParts.reduce((m,p)=>Math.max(m,p.bytes),0);const allPassed=chosenParts.length<=opt.maxParts&&chosenParts.every(p=>p.bytes<=opt.targetBytes)&&checkGt7Parts(chosenParts,opt).ok;appendLog(`採用: ${mode}, 分割数:${chosenParts.length}, 最大:${formatBytes(largest)}`);return{fullSvg:fullSvgText,combinedSvg:combined,parts:chosenParts,allPassed,pathCount,mode,width:base.width,height:base.height}}
+function prepareLabels(img,opt){const size=fitSize(img.naturalWidth,img.naturalHeight,opt.maxSide);const width=size.width,height=size.height;const canvas=document.createElement('canvas');canvas.width=width;canvas.height=height;const ctx=canvas.getContext('2d',{willReadFrequently:true});ctx.clearRect(0,0,width,height);ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(img,0,0,width,height);sourceCanvas.width=width;sourceCanvas.height=height;sourceCanvas.getContext('2d').drawImage(canvas,0,0);const pixels=ctx.getImageData(0,0,width,height).data;const palette=buildPaletteKMeans(pixels,width,height,opt.colors);let labels=assignLabels(pixels,width,height,palette);if(opt.labelSmooth>0)labels=smoothLabels(labels,width,height,opt.labelSmooth);return{width,height,labels,palette}}
+function buildPathsForTile(base,xStart,xEnd,opt){const {labels,width,height,palette}=base;const total=width*height;const visited=new Uint8Array(total),inComponent=new Uint8Array(total),paths=[];for(let y=0;y<height;y++){for(let x=xStart;x<xEnd;x++){const i=y*width+x;if(visited[i])continue;const label=labels[i];if(label<0){visited[i]=1;continue}const comp=floodFillTile(labels,visited,inComponent,width,height,i,label,xStart,xEnd);if(comp.length>=opt.minArea){const loops=componentToLoops(comp,inComponent,width,height,opt.simplify);if(loops.length){const d=loopsToPathD(loops,opt);if(d)paths.push({d,fill:rgbToHex(palette[label],opt.shortColor),area:comp.length})}}for(const idx of comp)inComponent[idx]=0}}return paths}
+function floodFillTile(labels,visited,inComponent,width,height,start,label,xStart,xEnd){const stack=[start],comp=[];visited[start]=1;inComponent[start]=1;while(stack.length){const idx=stack.pop();comp.push(idx);const x=idx%width,y=Math.floor(idx/width);tryPush(idx-width,y>0,x);tryPush(idx+width,y<height-1,x);tryPush(idx-1,x>xStart,x-1);tryPush(idx+1,x<xEnd-1,x+1)}function tryPush(n,ok,nx){if(!ok||nx<xStart||nx>=xEnd||visited[n]||labels[n]!==label)return;visited[n]=1;inComponent[n]=1;stack.push(n)}return comp}
+function componentToLoops(comp,inComp,width,height,simplify){const edgeMap=new Map();let edgeCount=0;function add(x1,y1,x2,y2){const k=x1+','+y1;let arr=edgeMap.get(k);if(!arr){arr=[];edgeMap.set(k,arr)}arr.push([x2,y2]);edgeCount++}for(const idx of comp){const x=idx%width,y=Math.floor(idx/width);if(y===0||!inComp[idx-width])add(x,y,x+1,y);if(x===width-1||!inComp[idx+1])add(x+1,y,x+1,y+1);if(y===height-1||!inComp[idx+width])add(x+1,y+1,x,y+1);if(x===0||!inComp[idx-1])add(x,y+1,x,y)}const loops=[];while(edgeCount>0){let startKey=null;for(const [k,arr]of edgeMap){if(arr.length){startKey=k;break}}if(!startKey)break;const [sx,sy]=startKey.split(',').map(Number);let cx=sx,cy=sy;const loop=[[sx,sy]];let safety=0;while(safety++<500000){const arr=edgeMap.get(cx+','+cy);if(!arr||!arr.length)break;const [nx,ny]=arr.pop();edgeCount--;loop.push([nx,ny]);cx=nx;cy=ny;if(cx===sx&&cy===sy)break}if(loop.length>=4){let pts=removeCollinear(loop);if(simplify>0)pts=simplifyClosedPolyline(pts,simplify);if(pts.length>=4)loops.push(pts)}}return loops}
+function loopsToPathD(loops,opt){return loops.map(loop=>opt.curve?loopToCurveD(loop,opt):loopToLineD(loop,opt)).filter(Boolean).join(' ')}
+function loopToLineD(loop,opt){const pts=normalizeLoop(loop);if(pts.length<3)return'';let d=`M${num(pts[0][0],opt.precision)} ${num(pts[0][1],opt.precision)}`;for(let i=1;i<pts.length;i++){d+=` ${num(pts[i][0],opt.precision)} ${num(pts[i][1],opt.precision)}`}return d+'Z'}
+function loopToCurveD(loop,opt){const pts=normalizeLoop(loop);const n=pts.length;if(n<3)return'';let d=`M${num(pts[0][0],opt.precision)} ${num(pts[0][1],opt.precision)}`;const t=opt.curveStrength;for(let i=0;i<n;i++){const p0=pts[(i-1+n)%n],p1=pts[i],p2=pts[(i+1)%n],p3=pts[(i+2)%n];const c1=[p1[0]+(p2[0]-p0[0])*t/6,p1[1]+(p2[1]-p0[1])*t/6];const c2=[p2[0]-(p3[0]-p1[0])*t/6,p2[1]-(p3[1]-p1[1])*t/6];d+=`C${num(c1[0],opt.precision)} ${num(c1[1],opt.precision)} ${num(c2[0],opt.precision)} ${num(c2[1],opt.precision)} ${num(p2[0],opt.precision)} ${num(p2[1],opt.precision)}`}return d+'Z'}
+function normalizeLoop(loop){let pts=loop.slice();if(pts.length>1&&pts[0][0]===pts[pts.length-1][0]&&pts[0][1]===pts[pts.length-1][1])pts=pts.slice(0,-1);return pts}
+function makeSvg(width,height,paths,opt){const bleed=opt.bleed&&opt.bleedWidth>0;const groupAttrs=bleed?` fill-rule="evenodd" stroke-linejoin="round" stroke-linecap="round"`:` fill-rule="evenodd"`;const body=paths.map(p=>bleed?`<path fill="${p.fill}" stroke="${p.fill}" stroke-width="${num(opt.bleedWidth,opt.precision)}" d="${p.d}"/>`:`<path fill="${p.fill}" d="${p.d}"/>`).join('');const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><g${groupAttrs}>${body}</g></svg>`;return{svg,bytes:byteSize(svg)}}
+function splitPathsByTarget(width,height,paths,opt,prefix){const groups=[];let current=[];for(const p of paths){if(current.length===0){current=[p];continue}const test=current.concat([p]);if(byteSize(makeSvg(width,height,test,opt).svg)>opt.targetBytes){groups.push(current);current=[p]}else current=test}if(current.length)groups.push(current);return groups.map((g,i)=>{const svg=makeSvg(width,height,g,opt).svg;return{name:`${prefix}-${String(i+1).padStart(3,'0')}.svg`,svg,bytes:byteSize(svg),pathCount:g.length}})}
+async function findBestTiledSplit(base,opt){const candidates=[2,3,4,5,6,8,10,12,15,20,24,30,40,50,60].filter(v=>v<=opt.maxParts);let best=null;for(const slices of candidates){statusEl.textContent=`重なり付きスライス分割テスト中... ${slices}`;await waitFrame();const overlap=Math.ceil(Math.max(1,opt.bleedWidth+2));let all=[];for(let s=0;s<slices;s++){const xs=Math.max(0,Math.floor(base.width*s/slices)-overlap);const xe=Math.min(base.width,Math.floor(base.width*(s+1)/slices)+overlap);const paths=buildPathsForTile(base,xs,xe,opt);paths.sort((a,b)=>b.area-a.area);all=all.concat(splitPathsByTarget(base.width,base.height,paths,opt,`slice${s+1}`))}const largest=all.reduce((m,p)=>Math.max(m,p.bytes),0);appendLog(`${all.every(p=>p.bytes<=opt.targetBytes)&&all.length<=opt.maxParts?'OK':'NG'} スライス:${slices} 分割:${all.length} 最大:${formatBytes(largest)}`);const candidate={parts:all,slices,score:scoreParts(all,opt)};if(!best||candidate.score<best.score)best=candidate;if(all.length<=opt.maxParts&&all.every(p=>p.bytes<=opt.targetBytes))return candidate}return best}
+function scoreParts(parts,opt){const largest=parts.reduce((m,p)=>Math.max(m,p.bytes),0);const over=parts.reduce((s,p)=>s+Math.max(0,p.bytes-opt.targetBytes),0);const countPenalty=Math.max(0,parts.length-opt.maxParts)*opt.targetBytes*5;return largest+over*2+countPenalty}
+function makeCombinedSvg(width,height,parts){const body=parts.map(p=>extractSvgInner(p.svg)).join('');return`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">${body}</svg>`}
+function extractSvgInner(svg){const m=svg.match(/<svg[^>]*>([\s\S]*?)<\/svg>/i);return m?m[1]:svg}
+function optimizeSvgText(svg,opt){return svg.replace(/<!--([\s\S]*?)-->/g,'').replace(/>\s+</g,'><').replace(/\s{2,}/g,' ').replace(/\s\/>/g,'/>').trim()}
+function checkGt7Parts(parts,opt){const bad=[];for(const p of parts){if(p.bytes>opt.targetBytes)bad.push(`${p.name}: size`);if(/<image\b|data:image|<text\b|<script\b|<foreignObject\b|<filter\b|mix-blend-mode|mask=|clipPath/i.test(p.svg))bad.push(`${p.name}: unsupported element`);if(!/viewBox=/.test(p.svg))bad.push(`${p.name}: no viewBox`)}return{ok:bad.length===0,bad}}
+function updateStats(result,opt){const largest=result.parts.reduce((m,p)=>Math.max(m,p.bytes),0);const check=checkGt7Parts(result.parts,opt);fullSizeEl.textContent=formatBytes(byteSize(result.fullSvg));partsCountEl.textContent=String(result.parts.length);largestPartEl.textContent=formatBytes(largest);gt7StatusEl.innerHTML=check.ok&&result.parts.every(p=>p.bytes<=opt.targetBytes)?'<span class="ok">OK</span>':'<span class="ng">要調整</span>';pathCountEl.textContent=String(result.pathCount);splitModeEl.textContent=result.mode}
+function renderPartsList(parts,opt){partsList.innerHTML='';parts.forEach(part=>{const ok=part.bytes<=opt.targetBytes;const card=document.createElement('div');card.className='part-card';card.innerHTML=`<b>${part.name}</b><br>サイズ: <span class="${ok?'ok':'ng'}">${formatBytes(part.bytes)}</span><br>path数: ${part.pathCount}<br>`;const show=document.createElement('button');show.className='secondary';show.textContent='プレビュー';show.onclick=()=>{displayedSvg=part.svg;svgOutput.value=part.svg;renderSvgPreview(part.svg);statusEl.textContent=`${part.name} を表示中です。`};const dl=document.createElement('button');dl.textContent='DL';dl.onclick=()=>downloadText(part.name,part.svg);card.appendChild(show);card.appendChild(document.createTextNode(' '));card.appendChild(dl);partsList.appendChild(card)})}
+function renderSvgPreview(svg){if(previewUrl)URL.revokeObjectURL(previewUrl);svgPreview.innerHTML='';const img=document.createElement('img');img.alt='SVG preview';previewUrl=URL.createObjectURL(new Blob([svg],{type:'image/svg+xml;charset=utf-8'}));img.onerror=()=>{svgPreview.innerHTML=svg};img.src=previewUrl;svgPreview.appendChild(img)}
+function buildPaletteKMeans(pixels,width,height,k){const samples=[],total=width*height,step=Math.max(1,Math.floor(total/36000));for(let i=0;i<total;i+=step){const p=i*4;if(pixels[p+3]<16)continue;samples.push([pixels[p],pixels[p+1],pixels[p+2]])}if(!samples.length)return[[0,0,0]];k=Math.min(k,samples.length);const centers=[];for(let i=0;i<k;i++)centers.push([...samples[Math.floor(i*samples.length/k)]]);for(let iter=0;iter<12;iter++){const sums=Array.from({length:k},()=>[0,0,0,0]);for(const s of samples){const id=nearestColorIndex(s[0],s[1],s[2],centers);sums[id][0]+=s[0];sums[id][1]+=s[1];sums[id][2]+=s[2];sums[id][3]++}for(let i=0;i<k;i++){if(!sums[i][3])continue;centers[i][0]=sums[i][0]/sums[i][3];centers[i][1]=sums[i][1]/sums[i][3];centers[i][2]=sums[i][2]/sums[i][3]}}return centers.map(c=>[Math.round(c[0]),Math.round(c[1]),Math.round(c[2])])}
+function assignLabels(pixels,width,height,palette){const labels=new Int16Array(width*height);for(let i=0;i<width*height;i++){const p=i*4;if(pixels[p+3]<16){labels[i]=-1;continue}labels[i]=nearestColorIndex(pixels[p],pixels[p+1],pixels[p+2],palette)}return labels}
+function smoothLabels(labels,width,height,passes){let cur=labels;for(let pass=0;pass<passes;pass++){const next=new Int16Array(cur);for(let y=1;y<height-1;y++){for(let x=1;x<width-1;x++){const i=y*width+x;if(cur[i]<0)continue;const counts=new Map();for(let dy=-1;dy<=1;dy++)for(let dx=-1;dx<=1;dx++){if(dx===0&&dy===0)continue;const v=cur[(y+dy)*width+x+dx];if(v>=0)counts.set(v,(counts.get(v)||0)+1)}let best=cur[i],bestCount=0;for(const [v,c]of counts){if(c>bestCount){best=v;bestCount=c}}if(best!==cur[i]&&bestCount>=5)next[i]=best}}cur=next}return cur}
+function nearestColorIndex(r,g,b,palette){let best=0,bd=Infinity;for(let i=0;i<palette.length;i++){const c=palette[i],dr=r-c[0],dg=g-c[1],db=b-c[2],d=dr*dr+dg*dg+db*db;if(d<bd){bd=d;best=i}}return best}
+function removeCollinear(points){if(points.length<=4)return points;const closed=points[0][0]===points[points.length-1][0]&&points[0][1]===points[points.length-1][1];const src=closed?points.slice(0,-1):points.slice(),out=[];for(let i=0;i<src.length;i++){const a=src[(i-1+src.length)%src.length],b=src[i],c=src[(i+1)%src.length];if((b[0]-a[0])*(c[1]-b[1])!==(b[1]-a[1])*(c[0]-b[0]))out.push(b)}if(out.length)out.push(out[0]);return out}
+function simplifyClosedPolyline(points,tol){if(points.length<=4)return points;const closed=points[0][0]===points[points.length-1][0]&&points[0][1]===points[points.length-1][1];const src=closed?points.slice(0,-1):points.slice();let start=0;for(let i=1;i<src.length;i++){if(src[i][0]<src[start][0])start=i}const rot=src.slice(start).concat(src.slice(0,start));rot.push(rot[0]);const s=rdp(rot,tol);if(s[0][0]!==s[s.length-1][0]||s[0][1]!==s[s.length-1][1])s.push(s[0]);return s}
+function rdp(points,eps){if(points.length<3)return points;let dmax=0,idx=0,end=points.length-1;for(let i=1;i<end;i++){const d=perp(points[i],points[0],points[end]);if(d>dmax){idx=i;dmax=d}}if(dmax>eps){const l=rdp(points.slice(0,idx+1),eps),r=rdp(points.slice(idx),eps);return l.slice(0,-1).concat(r)}return[points[0],points[end]]}
+function perp(p,a,b){const dx=b[0]-a[0],dy=b[1]-a[1];if(dx===0&&dy===0)return Math.hypot(p[0]-a[0],p[1]-a[1]);return Math.abs(dy*p[0]-dx*p[1]+b[0]*a[1]-b[1]*a[0])/Math.hypot(dx,dy)}
+function rgbToHex(rgb,short){const h=rgb.map(v=>{const s=Math.max(0,Math.min(255,Math.round(v))).toString(16);return s.length===1?'0'+s:s}).join('').toLowerCase();if(short&&h[0]===h[1]&&h[2]===h[3]&&h[4]===h[5])return`#${h[0]}${h[2]}${h[4]}`;return'#'+h}
+function num(v,p){let n=Number(v);if(!Number.isFinite(n))return'0';let s=p<=0?String(Math.round(n)):n.toFixed(p).replace(/\.?0+$/,'');if(s==='-0')s='0';return s.replace(/^(-?)0\./,'$1.')}
+function fitSize(w,h,maxSide){const scale=Math.min(1,maxSide/Math.max(w,h));return{width:Math.max(1,Math.round(w*scale)),height:Math.max(1,Math.round(h*scale))}}
+function loadImage(file){return new Promise((res,rej)=>{const url=URL.createObjectURL(file),img=new Image();img.onload=()=>{URL.revokeObjectURL(url);res(img)};img.onerror=rej;img.src=url})}
+function drawSourceImage(){const size=fitSize(loadedImage.naturalWidth,loadedImage.naturalHeight,Number(inputs.maxSide.value));sourceCanvas.width=size.width;sourceCanvas.height=size.height;const ctx=sourceCanvas.getContext('2d',{willReadFrequently:true});ctx.clearRect(0,0,size.width,size.height);ctx.drawImage(loadedImage,0,0,size.width,size.height)}
+function appendLog(t){logOutput.value+=t+'\n';logOutput.scrollTop=logOutput.scrollHeight}
+function byteSize(text){return new Blob([text]).size}function formatBytes(b){return b<1024?`${b} B`:`${(b/1024).toFixed(1)} KB`}function clamp(v,min,max){return Math.max(min,Math.min(max,v))}function waitFrame(){return new Promise(r=>requestAnimationFrame(r))}
+function downloadText(name,text){downloadBlob(name,new Blob([text],{type:'image/svg+xml;charset=utf-8'}))}function downloadBlob(name,blob){const url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
+function makeZip(files){const encoder=new TextEncoder();const local=[],central=[];let offset=0;for(const f of files){const name=encoder.encode(f.name),data=encoder.encode(f.text),crc=crc32(data),lh=new Uint8Array(30+name.length);const dv=new DataView(lh.buffer);u32(dv,0,0x04034b50);u16(dv,4,20);u16(dv,6,0);u16(dv,8,0);u16(dv,10,0);u16(dv,12,0);u32(dv,14,crc);u32(dv,18,data.length);u32(dv,22,data.length);u16(dv,26,name.length);u16(dv,28,0);lh.set(name,30);local.push(lh,data);const ch=new Uint8Array(46+name.length);const cdv=new DataView(ch.buffer);u32(cdv,0,0x02014b50);u16(cdv,4,20);u16(cdv,6,20);u16(cdv,8,0);u16(cdv,10,0);u16(cdv,12,0);u16(cdv,14,0);u32(cdv,16,crc);u32(cdv,20,data.length);u32(cdv,24,data.length);u16(cdv,28,name.length);u16(cdv,30,0);u16(cdv,32,0);u16(cdv,34,0);u16(cdv,36,0);u32(cdv,38,0);u32(cdv,42,offset);ch.set(name,46);central.push(ch);offset+=lh.length+data.length}const centralSize=central.reduce((s,a)=>s+a.length,0);const end=new Uint8Array(22);const edv=new DataView(end.buffer);u32(edv,0,0x06054b50);u16(edv,4,0);u16(edv,6,0);u16(edv,8,files.length);u16(edv,10,files.length);u32(edv,12,centralSize);u32(edv,16,offset);u16(edv,20,0);return new Blob([...local,...central,end],{type:'application/zip'})}
+function u16(dv,o,v){dv.setUint16(o,v,true)}function u32(dv,o,v){dv.setUint32(o,v>>>0,true)}
+let crcTable=null;function crc32(data){if(!crcTable){crcTable=new Uint32Array(256);for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=(c&1)?(0xedb88320^(c>>>1)):(c>>>1);crcTable[n]=c>>>0}}let c=0xffffffff;for(let i=0;i<data.length;i++)c=crcTable[(c^data[i])&255]^(c>>>8);return(c^0xffffffff)>>>0}
+</script>
 </body>
 </html>
