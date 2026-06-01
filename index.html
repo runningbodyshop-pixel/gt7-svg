@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>GT7 Split SVG Vectorizer</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      background: #101010;
+      color: #eee;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .app {
+      max-width: 1240px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 30px;
+    }
+
+    h2 {
+      margin: 24px 0 10px;
+      font-size: 18px;
+    }
+
+    .lead,
+    .note {
+      color: #aaa;
+      line-height: 1.7;
+    }
+
+    .panel {
+      background: #1c1c1c;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .file-label {
+      display: inline-block;
+      padding: 12px 18px;
+      background: #fff;
+      color: #111;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    .file-label input {
+      display: none;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(170px, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .control {
+      background: #151515;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 14px;
+      color: #ddd;
+    }
+
+    .control label {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .control.row label {
+      flex-direction: row;
+      align-items: center;
+    }
+
+    input[type="range"] {
+      width: 100%;
+    }
+
+    input[type="number"] {
+      width: 90px;
+      background: #050505;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 7px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 800;
+      cursor: pointer;
+      background: #3399ff;
+      color: #fff;
+    }
+
+    button.secondary {
+      background: #444;
+    }
+
+    button:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    #status {
+      margin-top: 16px;
+      color: #aaa;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 12px;
+      margin-top: 16px;
+    }
+
+    .stat {
+      background: #151515;
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 14px;
+      color: #aaa;
+    }
+
+    .stat b {
+      display: block;
+      color: #fff;
+      font-size: 20px;
+      margin-top: 4px;
+      word-break: break-word;
+    }
+
+    .preview-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 22px;
+      margin-top: 24px;
+    }
+
+    canvas,
+    .svg-preview {
+      width: 100%;
+      min-height: 380px;
+      background:
+        linear-gradient(45deg, #222 25%, transparent 25%),
+        linear-gradient(-45deg, #222 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #222 75%),
+        linear-gradient(-45deg, transparent 75%, #222 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+      border: 1px solid #333;
+      border-radius: 16px;
+    }
+
+    .svg-preview {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      padding: 14px;
+    }
+
+    .svg-preview svg {
+      max-width: 100%;
+      max-height: 560px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 220px;
+      padding: 14px;
+      background: #050505;
+      color: #d7ffd7;
+      border: 1px solid #333;
+      border-radius: 16px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .parts {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+      gap: 10px;
+      margin-top: 12px;
+    }
+
+    .part-card {
+      background: #151515;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 12px;
+      color: #ddd;
+      font-size: 13px;
+      line-height: 1.6;
+    }
+
+    .part-card button {
+      margin-top: 8px;
+      padding: 8px 12px;
+      font-size: 12px;
+    }
+
+    .ok {
+      color: #92ff92;
+    }
+
+    .ng {
+      color: #ff9b9b;
+    }
+
+    @media (max-width: 900px) {
+      .controls,
+      .stats,
+      .preview-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <h1>GT7 Split SVG Vectorizer</h1>
+
+    <p class="lead">
+      画像をSVG化して、完成SVGをGT7用に複数ファイルへ分割します。
+      元のSVGが15KBを超えてもOKです。分割後の各SVGが目標サイズ以内になるようにします。
+    </p>
+
+    <section class="panel">
+      <label class="file-label">
+        画像を選択
+        <input id="fileInput" type="file" accept="image/*" />
+      </label>
+
+      <div class="controls">
+        <div class="control">
+          <label>
+            1ファイル目標KB
+            <input id="targetKbInput" type="number" min="4" max="15" step="0.1" value="14.5" />
+          </label>
+        </div>
+
+        <div class="control">
+          <label>
+            色数
+            <input id="colorsInput" type="range" min="4" max="64" value="24" />
+            <span><b id="colorsValue">24</b></span>
+          </label>
+        </div>
+
+        <div class="control">
+          <label>
+            最大サイズ
+            <input id="maxSideInput" type="range" min="300" max="1800" step="50" value="900" />
+            <span><b id="maxSideValue">900</b>px</span>
+          </label>
+        </div>
+
+        <div class="control">
+          <label>
+            最小パーツ面積
+            <input id="minAreaInput" type="range" min="1" max="500" value="30" />
+            <span><b id="minAreaValue">30</b></span>
+          </label>
+        </div>
+
+        <div class="control">
+          <label>
+            輪郭簡略化
+            <input id="simplifyInput" type="range" min="0" max="8" step="0.25" value="1.25" />
+            <span><b id="simplifyValue">1.25</b></span>
+          </label>
+        </div>
+
+        <div class="control">
+          <label>
+            自動スライス最大数
+            <input id="maxSlicesInput" type="number" min="1" max="64" value="24" />
+          </label>
+        </div>
+
+        <div class="control row">
+          <label>
+            <input id="splitInput" type="checkbox" checked />
+            SVGを分割する
+          </label>
+        </div>
+
+        <div class="control row">
+          <label>
+            <input id="shortColorInput" type="checkbox" checked />
+            色コード短縮
+          </label>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button id="vectorizeBtn" disabled>SVG化して分割</button>
+        <button id="downloadFullBtn" class="secondary" disabled>元の完成SVGをDL</button>
+        <button id="downloadPartsBtn" class="secondary" disabled>分割SVGを一括DL</button>
+        <button id="copyBtn" class="secondary" disabled>表示SVGコードをコピー</button>
+      </div>
+
+      <div id="status">画像を選択してください。</div>
+
+      <div class="stats">
+        <div class="stat">
+          元SVGサイズ
+          <b id="fullSize">-</b>
+        </div>
+
+        <div class="stat">
+          分割数
+          <b id="partsCount">-</b>
+        </div>
+
+        <div class="stat">
+          最大パート
+          <b id="largestPart">-</b>
+        </div>
+
+        <div class="stat">
+          スライス数
+          <b id="usedSlices">-</b>
+        </div>
+
+        <div class="stat">
+          結果
+          <b id="resultStatus">-</b>
+        </div>
+      </div>
+    </section>
+
+    <div class="preview-grid">
+      <section>
+        <h2>元画像</h2>
+        <canvas id="sourceCanvas"></canvas>
+      </section>
+
+      <section>
+        <h2>完成SVGプレビュー</h2>
+        <div id="svgPreview" class="svg-preview"></div>
+      </section>
+    </div>
+
+    <h2>分割ファイル一覧</h2>
+    <div id="partsList" class="parts"></div>
+
+    <h2>表示中SVGコード</h2>
+    <textarea id="svgOutput" spellcheck="false"></textarea>
+
+    <h2>ログ</h2>
+    <textarea id="logOutput" spellcheck="false" readonly></textarea>
+
+    <p class="note">
+      使い方：出力された part-001.svg、part-002.svg… をGT7にアップロードし、
+      ゲーム内で同じ位置・同じサイズに重ねてください。
+      part番号が小さいものを下、番号が大きいものを上に重ねる想定です。
+    </p>
+  </main>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const sourceCanvas = document.getElementById("sourceCanvas");
+    const svgPreview = document.getElementById("svgPreview");
+    const svgOutput = document.getElementById("svgOutput");
+    const logOutput = document.getElementById("logOutput");
+    const partsList = document.getElementById("partsList");
+
+    const vectorizeBtn = document.getElementById("vectorizeBtn");
+    const downloadFullBtn = document.getElementById("downloadFullBtn");
+    const downloadPartsBtn = document.getElementById("downloadPartsBtn");
+    const copyBtn = document.getElementById("copyBtn");
+
+    const statusEl = document.getElementById("status");
+
+    const targetKbInput = document.getElementById("targetKbInput");
+    const colorsInput = document.getElementById("colorsInput");
+    const maxSideInput = document.getElementById("maxSideInput");
+    const minAreaInput = document.getElementById("minAreaInput");
+    const simplifyInput = document.getElementById("simplifyInput");
+    const maxSlicesInput = document.getElementById("maxSlicesInput");
+
+    const splitInput = document.getElementById("splitInput");
+    const shortColorInput = document.getElementById("shortColorInput");
+
+    const colorsValue = document.getElementById("colorsValue");
+    const maxSideValue = document.getElementById("maxSideValue");
+    const minAreaValue = document.getElementById("minAreaValue");
+    const simplifyValue = document.getElementById("simplifyValue");
+
+    const fullSizeEl = document.getElementById("fullSize");
+    const partsCountEl = document.getElementById("partsCount");
+    const largestPartEl = document.getElementById("largestPart");
+    const usedSlicesEl = document.getElementById("usedSlices");
+    const resultStatusEl = document.getElementById("resultStatus");
+
+    let loadedImage = null;
+    let fullSvg = "";
+    let partFiles = [];
+    let displayedSvg = "";
+
+    bindRange(colorsInput, colorsValue);
+    bindRange(maxSideInput, maxSideValue);
+    bindRange(minAreaInput, minAreaValue);
+    bindRange(simplifyInput, simplifyValue);
+
+    function bindRange(input, output) {
+      input.addEventListener("input", () => {
+        output.textContent = input.value;
+      });
+    }
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      loadedImage = await loadImage(file);
+
+      fullSvg = "";
+      partFiles = [];
+      displayedSvg = "";
+
+      drawSourceImage();
+
+      vectorizeBtn.disabled = false;
+      downloadFullBtn.disabled = true;
+      downloadPartsBtn.disabled = true;
+      copyBtn.disabled = true;
+
+      svgPreview.innerHTML = "";
+      svgOutput.value = "";
+      logOutput.value = "";
+      partsList.innerHTML = "";
+
+      fullSizeEl.textContent = "-";
+      partsCountEl.textContent = "-";
+      largestPartEl.textContent = "-";
+      usedSlicesEl.textContent = "-";
+      resultStatusEl.textContent = "-";
+
+      statusEl.textContent = "画像を読み込みました。SVG化して分割できます。";
+    });
+
+    vectorizeBtn.addEventListener("click", async () => {
+      if (!loadedImage) return;
+
+      vectorizeBtn.disabled = true;
+      downloadFullBtn.disabled = true;
+      downloadPartsBtn.disabled = true;
+      copyBtn.disabled = true;
+
+      fullSvg = "";
+      partFiles = [];
+      displayedSvg = "";
+
+      svgPreview.innerHTML = "";
+      svgOutput.value = "";
+      logOutput.value = "";
+      partsList.innerHTML = "";
+
+      const options = {
+        targetBytes: Math.floor(clamp(Number(targetKbInput.value), 4, 15) * 1024),
+        colors: clamp(Number(colorsInput.value), 4, 64),
+        maxSide: clamp(Number(maxSideInput.value), 300, 1800),
+        minArea: clamp(Number(minAreaInput.value), 1, 500),
+        simplify: clamp(Number(simplifyInput.value), 0, 8),
+        maxSlices: clamp(Number(maxSlicesInput.value), 1, 64),
+        split: splitInput.checked,
+        shortColor: shortColorInput.checked
+      };
+
+      try {
+        statusEl.textContent = "画像を解析中...";
+        await waitFrame();
+
+        const result = await vectorizeAndSplit(loadedImage, options);
+
+        fullSvg = result.fullSvg;
+        partFiles = result.parts;
+        displayedSvg = partFiles.length > 0 ? partFiles[0].svg : fullSvg;
+
+        svgPreview.innerHTML = fullSvg;
+        svgOutput.value = displayedSvg;
+
+        renderPartsList(partFiles);
+
+        const fullBytes = byteSize(fullSvg);
+        const largest = partFiles.reduce((m, p) => Math.max(m, p.bytes), 0);
+        const passed = partFiles.every(p => p.bytes <= options.targetBytes);
+
+        fullSizeEl.textContent = formatBytes(fullBytes);
+        partsCountEl.textContent = String(partFiles.length);
+        largestPartEl.textContent = formatBytes(largest);
+        usedSlicesEl.textContent = String(result.slices);
+        resultStatusEl.innerHTML = passed ? '<span class="ok">OK</span>' : '<span class="ng">一部超過</span>';
+
+        downloadFullBtn.disabled = false;
+        downloadPartsBtn.disabled = partFiles.length === 0;
+        copyBtn.disabled = false;
+
+        if (passed) {
+          statusEl.textContent = `完了。${partFiles.length}個のSVGに分割しました。すべて目標サイズ以内です。`;
+        } else {
+          statusEl.textContent = `完了。ただし一部のSVGが目標サイズを超えています。最大スライス数を増やすか、簡略化/最小パーツ面積を少し上げてください。`;
+        }
+      } catch (error) {
+        console.error(error);
+        statusEl.textContent = "エラーが発生しました。最大サイズや色数を下げて試してください。";
+      }
+
+      vectorizeBtn.disabled = false;
+    });
+
+    downloadFullBtn.addEventListener("click", () => {
+      if (!fullSvg) return;
+      downloadText("full-vectorized.svg", fullSvg);
+    });
+
+    downloadPartsBtn.addEventListener("click", async () => {
+      for (const part of partFiles) {
+        downloadText(part.name, part.svg);
+        await sleep(180);
+      }
+
+      statusEl.textContent = "分割SVGのダウンロードを開始しました。ブラウザが複数ダウンロードの確認を出す場合があります。";
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      if (!displayedSvg) return;
+
+      await navigator.clipboard.writeText(displayedSvg);
+      statusEl.textContent = "表示中のSVGコードをコピーしました。";
+    });
+
+    async function vectorizeAndSplit(img, options) {
+      const base = prepareLabels(img, options);
+
+      const fullPaths = buildPathsForTile(
+        base.labels,
+        base.width,
+        base.height,
+        base.palette,
+        0,
+        base.width,
+        options.minArea,
+        options.simplify,
+        options.shortColor
+      );
+
+      fullPaths.sort((a, b) => b.area - a.area);
+
+      const fullSvgResult = makeSvg(base.width, base.height, fullPaths);
+      const fullSvgText = fullSvgResult.svg;
+
+      if (!options.split) {
+        appendLog("分割OFF: 完成SVGをそのまま出力しました。");
+
+        return {
+          fullSvg: fullSvgText,
+          parts: [
+            {
+              name: "part-001.svg",
+              svg: fullSvgText,
+              bytes: byteSize(fullSvgText),
+              index: 1
+            }
+          ],
+          slices: 1
+        };
+      }
+
+      const sliceCandidates = buildSliceCandidates(options.maxSlices);
+
+      let best = null;
+
+      for (const slices of sliceCandidates) {
+        statusEl.textContent = `分割テスト中... 縦スライス ${slices}`;
+        await waitFrame();
+
+        const parts = makeSplitPartsFromSlices(
+          base.labels,
+          base.width,
+          base.height,
+          base.palette,
+          slices,
+          options
+        );
+
+        const largest = parts.reduce((m, p) => Math.max(m, p.bytes), 0);
+        const passed = parts.every(p => p.bytes <= options.targetBytes);
+
+        appendLog(
+          `${passed ? "OK" : "NG"} / スライス:${slices} / ` +
+          `分割数:${parts.length} / 最大:${formatBytes(largest)}`
+        );
+
+        const candidate = {
+          fullSvg: fullSvgText,
+          parts,
+          slices,
+          largest
+        };
+
+        if (!best || largest < best.largest) {
+          best = candidate;
+        }
+
+        if (passed) {
+          return candidate;
+        }
+      }
+
+      return best;
+    }
+
+    function buildSliceCandidates(maxSlices) {
+      const base = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64];
+      const values = base.filter(v => v <= maxSlices);
+
+      if (!values.includes(maxSlices)) {
+        values.push(maxSlices);
+      }
+
+      return Array.from(new Set(values)).sort((a, b) => a - b);
+    }
+
+    function makeSplitPartsFromSlices(labels, width, height, palette, slices, options) {
+      const allParts = [];
+      let partIndex = 1;
+
+      for (let s = 0; s < slices; s++) {
+        const x0 = Math.floor(width * s / slices);
+        const x1 = Math.floor(width * (s + 1) / slices);
+
+        const paths = buildPathsForTile(
+          labels,
+          width,
+          height,
+          palette,
+          x0,
+          x1,
+          options.minArea,
+          options.simplify,
+          options.shortColor
+        );
+
+        paths.sort((a, b) => b.area - a.area);
+
+        const groups = splitPathsByTargetBytes(
+          width,
+          height,
+          paths,
+          options.targetBytes
+        );
+
+        for (const group of groups) {
+          const svg = makeSvg(width, height, group).svg;
+
+          allParts.push({
+            name: `part-${String(partIndex).padStart(3, "0")}.svg`,
+            svg,
+            bytes: byteSize(svg),
+            index: partIndex,
+            slice: s + 1,
+            totalSlices: slices,
+            pathCount: group.length
+          });
+
+          partIndex++;
+        }
+      }
+
+      return allParts;
+    }
+
+    function splitPathsByTargetBytes(width, height, paths, targetBytes) {
+      const groups = [];
+      let current = [];
+
+      for (const path of paths) {
+        if (current.length === 0) {
+          current.push(path);
+          continue;
+        }
+
+        const test = current.concat(path);
+        const testBytes = byteSize(makeSvg(width, height, test).svg);
+
+        if (testBytes > targetBytes) {
+          groups.push(current);
+          current = [path];
+        } else {
+          current = test;
+        }
+      }
+
+      if (current.length > 0) {
+        groups.push(current);
+      }
+
+      return groups;
+    }
+
+    function prepareLabels(img, options) {
+      const size = fitSize(img.naturalWidth, img.naturalHeight, options.maxSide);
+      const width = size.width;
+      const height = size.height;
+
+      const canvas = document.createElement("canvas");
+      canvas.width = width;
+      canvas.height = height;
+
+      const ctx = canvas.getContext("2d", { willReadFrequently: true });
+      ctx.clearRect(0, 0, width, height);
+      ctx.drawImage(img, 0, 0, width, height);
+
+      sourceCanvas.width = width;
+      sourceCanvas.height = height;
+      sourceCanvas.getContext("2d").drawImage(canvas, 0, 0);
+
+      const imageData = ctx.getImageData(0, 0, width, height);
+      const pixels = imageData.data;
+
+      const palette = buildPaletteKMeans(pixels, width, height, options.colors);
+      const labels = assignLabels(pixels, width, height, palette);
+
+      return {
+        width,
+        height,
+        labels,
+        palette
+      };
+    }
+
+    function buildPathsForTile(labels, width, height, palette, xStart, xEnd, minArea, simplify, shortColor) {
+      const total = width * height;
+      const visited = new Uint8Array(total);
+      const inComponent = new Uint8Array(total);
+      const paths = [];
+
+      for (let y = 0; y < height; y++) {
+        for (let x = xStart; x < xEnd; x++) {
+          const i = y * width + x;
+
+          if (visited[i]) continue;
+
+          const label = labels[i];
+
+          if (label < 0) {
+            visited[i] = 1;
+            continue;
+          }
+
+          const component = floodFillComponentTile(
+            labels,
+            visited,
+            inComponent,
+            width,
+            height,
+            i,
+            label,
+            xStart,
+            xEnd
+          );
+
+          if (component.length >= minArea) {
+            const loops = componentToLoops(
+              component,
+              inComponent,
+              width,
+              height,
+              simplify
+            );
+
+            if (loops.length > 0) {
+              const d = loopsToCompactPathD(loops);
+
+              if (d) {
+                paths.push({
+                  d,
+                  fill: rgbToHex(palette[label], shortColor),
+                  area: component.length
+                });
+              }
+            }
+          }
+
+          for (const idx of component) {
+            inComponent[idx] = 0;
+          }
+        }
+      }
+
+      return paths;
+    }
+
+    function floodFillComponentTile(labels, visited, inComponent, width, height, start, label, xStart, xEnd) {
+      const stack = [start];
+      const component = [];
+
+      visited[start] = 1;
+      inComponent[start] = 1;
+
+      while (stack.length) {
+        const idx = stack.pop();
+        component.push(idx);
+
+        const x = idx % width;
+        const y = Math.floor(idx / width);
+
+        tryPush(idx - width, y > 0, x);
+        tryPush(idx + width, y < height - 1, x);
+        tryPush(idx - 1, x > xStart, x - 1);
+        tryPush(idx + 1, x < xEnd - 1, x + 1);
+      }
+
+      function tryPush(next, ok, nextX) {
+        if (!ok) return;
+        if (nextX < xStart || nextX >= xEnd) return;
+        if (visited[next]) return;
+        if (labels[next] !== label) return;
+
+        visited[next] = 1;
+        inComponent[next] = 1;
+        stack.push(next);
+      }
+
+      return component;
+    }
+
+    function componentToLoops(component, inComponent, width, height, simplify) {
+      const edgeMap = new Map();
+      let edgeCount = 0;
+
+      function addEdge(x1, y1, x2, y2) {
+        const key = `${x1},${y1}`;
+        const arr = edgeMap.get(key) || [];
+
+        arr.push([x2, y2]);
+        edgeMap.set(key, arr);
+        edgeCount++;
+      }
+
+      for (const idx of component) {
+        const x = idx % width;
+        const y = Math.floor(idx / width);
+
+        if (y === 0 || !inComponent[idx - width]) {
+          addEdge(x, y, x + 1, y);
+        }
+
+        if (x === width - 1 || !inComponent[idx + 1]) {
+          addEdge(x + 1, y, x + 1, y + 1);
+        }
+
+        if (y === height - 1 || !inComponent[idx + width]) {
+          addEdge(x + 1, y + 1, x, y + 1);
+        }
+
+        if (x === 0 || !inComponent[idx - 1]) {
+          addEdge(x, y + 1, x, y);
+        }
+      }
+
+      const loops = [];
+
+      while (edgeCount > 0) {
+        let startKey = null;
+
+        for (const [key, arr] of edgeMap) {
+          if (arr.length) {
+            startKey = key;
+            break;
+          }
+        }
+
+        if (!startKey) break;
+
+        const start = startKey.split(",").map(Number);
+        const sx = start[0];
+        const sy = start[1];
+
+        const loop = [[sx, sy]];
+
+        let cx = sx;
+        let cy = sy;
+        let safety = 0;
+
+        while (safety++ < 300000) {
+          const key = `${cx},${cy}`;
+          const arr = edgeMap.get(key);
+
+          if (!arr || arr.length === 0) break;
+
+          const next = arr.pop();
+          edgeCount--;
+
+          const nx = next[0];
+          const ny = next[1];
+
+          loop.push([nx, ny]);
+
+          cx = nx;
+          cy = ny;
+
+          if (cx === sx && cy === sy) break;
+        }
+
+        if (loop.length >= 4) {
+          const cleaned = removeCollinear(loop);
+          const simple = simplify > 0
+            ? simplifyClosedPolyline(cleaned, simplify)
+            : cleaned;
+
+          if (simple.length >= 4) {
+            loops.push(simple);
+          }
+        }
+      }
+
+      return loops;
+    }
+
+    function removeCollinear(points) {
+      if (points.length <= 4) return points;
+
+      const closed =
+        points[0][0] === points[points.length - 1][0] &&
+        points[0][1] === points[points.length - 1][1];
+
+      const src = closed ? points.slice(0, -1) : points.slice();
+      const out = [];
+
+      for (let i = 0; i < src.length; i++) {
+        const prev = src[(i - 1 + src.length) % src.length];
+        const curr = src[i];
+        const next = src[(i + 1) % src.length];
+
+        const dx1 = curr[0] - prev[0];
+        const dy1 = curr[1] - prev[1];
+        const dx2 = next[0] - curr[0];
+        const dy2 = next[1] - curr[1];
+
+        if (dx1 * dy2 !== dy1 * dx2) {
+          out.push(curr);
+        }
+      }
+
+      if (out.length > 0) {
+        out.push(out[0]);
+      }
+
+      return out;
+    }
+
+    function simplifyClosedPolyline(points, tolerance) {
+      if (points.length <= 4) return points;
+
+      const closed =
+        points[0][0] === points[points.length - 1][0] &&
+        points[0][1] === points[points.length - 1][1];
+
+      const src = closed ? points.slice(0, -1) : points.slice();
+
+      let startIndex = 0;
+
+      for (let i = 1; i < src.length; i++) {
+        if (src[i][0] < src[startIndex][0]) {
+          startIndex = i;
+        }
+      }
+
+      const rotated = src.slice(startIndex).concat(src.slice(0, startIndex));
+      rotated.push(rotated[0]);
+
+      const simplified = rdp(rotated, tolerance);
+
+      if (
+        simplified[0][0] !== simplified[simplified.length - 1][0] ||
+        simplified[0][1] !== simplified[simplified.length - 1][1]
+      ) {
+        simplified.push(simplified[0]);
+      }
+
+      return simplified;
+    }
+
+    function rdp(points, epsilon) {
+      if (points.length < 3) return points;
+
+      let dmax = 0;
+      let index = 0;
+      const end = points.length - 1;
+
+      for (let i = 1; i < end; i++) {
+        const d = perpendicularDistance(points[i], points[0], points[end]);
+
+        if (d > dmax) {
+          index = i;
+          dmax = d;
+        }
+      }
+
+      if (dmax > epsilon) {
+        const left = rdp(points.slice(0, index + 1), epsilon);
+        const right = rdp(points.slice(index), epsilon);
+
+        return left.slice(0, -1).concat(right);
+      }
+
+      return [points[0], points[end]];
+    }
+
+    function perpendicularDistance(p, a, b) {
+      const dx = b[0] - a[0];
+      const dy = b[1] - a[1];
+
+      if (dx === 0 && dy === 0) {
+        return Math.hypot(p[0] - a[0], p[1] - a[1]);
+      }
+
+      return Math.abs(
+        dy * p[0] -
+        dx * p[1] +
+        b[0] * a[1] -
+        b[1] * a[0]
+      ) / Math.hypot(dx, dy);
+    }
+
+    function loopsToCompactPathD(loops) {
+      const parts = [];
+
+      for (const loop of loops) {
+        if (loop.length < 4) continue;
+
+        const first = loop[0];
+
+        parts.push(`M${first[0]} ${first[1]}`);
+
+        for (let i = 1; i < loop.length - 1; i++) {
+          const p = loop[i];
+          parts.push(`${p[0]} ${p[1]}`);
+        }
+
+        parts.push("Z");
+      }
+
+      return parts.join(" ");
+    }
+
+    function makeSvg(width, height, paths) {
+      const body = paths.map(p => {
+        return `<path fill="${p.fill}" d="${p.d}"/>`;
+      }).join("");
+
+      const svg =
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}">` +
+        `<g fill-rule="evenodd">${body}</g>` +
+        `</svg>`;
+
+      return {
+        svg,
+        bytes: byteSize(svg)
+      };
+    }
+
+    function buildPaletteKMeans(pixels, width, height, k) {
+      const samples = [];
+      const total = width * height;
+      const step = Math.max(1, Math.floor(total / 22000));
+
+      for (let i = 0; i < total; i += step) {
+        const p = i * 4;
+
+        if (pixels[p + 3] < 16) continue;
+
+        samples.push([
+          pixels[p],
+          pixels[p + 1],
+          pixels[p + 2]
+        ]);
+      }
+
+      if (samples.length === 0) {
+        return [[0, 0, 0]];
+      }
+
+      k = Math.min(k, samples.length);
+
+      const centers = [];
+
+      for (let i = 0; i < k; i++) {
+        const index = Math.floor((i / k) * samples.length);
+        centers.push([...samples[index]]);
+      }
+
+      for (let iter = 0; iter < 10; iter++) {
+        const sums = Array.from({ length: k }, () => [0, 0, 0, 0]);
+
+        for (const s of samples) {
+          const id = nearestColorIndex(s[0], s[1], s[2], centers);
+
+          sums[id][0] += s[0];
+          sums[id][1] += s[1];
+          sums[id][2] += s[2];
+          sums[id][3]++;
+        }
+
+        for (let i = 0; i < k; i++) {
+          if (sums[i][3] === 0) continue;
+
+          centers[i][0] = sums[i][0] / sums[i][3];
+          centers[i][1] = sums[i][1] / sums[i][3];
+          centers[i][2] = sums[i][2] / sums[i][3];
+        }
+      }
+
+      return centers.map(c => [
+        Math.round(c[0]),
+        Math.round(c[1]),
+        Math.round(c[2])
+      ]);
+    }
+
+    function assignLabels(pixels, width, height, palette) {
+      const total = width * height;
+      const labels = new Int16Array(total);
+
+      for (let i = 0; i < total; i++) {
+        const p = i * 4;
+
+        if (pixels[p + 3] < 16) {
+          labels[i] = -1;
+          continue;
+        }
+
+        labels[i] = nearestColorIndex(
+          pixels[p],
+          pixels[p + 1],
+          pixels[p + 2],
+          palette
+        );
+      }
+
+      return labels;
+    }
+
+    function nearestColorIndex(r, g, b, palette) {
+      let best = 0;
+      let bestDist = Infinity;
+
+      for (let i = 0; i < palette.length; i++) {
+        const c = palette[i];
+
+        const dr = r - c[0];
+        const dg = g - c[1];
+        const db = b - c[2];
+
+        const dist = dr * dr + dg * dg + db * db;
+
+        if (dist < bestDist) {
+          bestDist = dist;
+          best = i;
+        }
+      }
+
+      return best;
+    }
+
+    function rgbToHex(rgb, shortColor) {
+      const hex = rgb.map(v => {
+        const s = Math.max(0, Math.min(255, Math.round(v))).toString(16);
+        return s.length === 1 ? "0" + s : s;
+      }).join("");
+
+      const h = hex.toLowerCase();
+
+      if (
+        shortColor &&
+        h[0] === h[1] &&
+        h[2] === h[3] &&
+        h[4] === h[5]
+      ) {
+        return `#${h[0]}${h[2]}${h[4]}`;
+      }
+
+      return `#${h}`;
+    }
+
+    function loadImage(file) {
+      return new Promise((resolve, reject) => {
+        const url = URL.createObjectURL(file);
+        const img = new Image();
+
+        img.onload = () => {
+          URL.revokeObjectURL(url);
+          resolve(img);
+        };
+
+        img.onerror = reject;
+        img.src = url;
+      });
+    }
+
+    function drawSourceImage() {
+      const size = fitSize(
+        loadedImage.naturalWidth,
+        loadedImage.naturalHeight,
+        Number(maxSideInput.value)
+      );
+
+      sourceCanvas.width = size.width;
+      sourceCanvas.height = size.height;
+
+      const ctx = sourceCanvas.getContext("2d", { willReadFrequently: true });
+      ctx.clearRect(0, 0, size.width, size.height);
+      ctx.drawImage(loadedImage, 0, 0, size.width, size.height);
+    }
+
+    function fitSize(w, h, maxSide) {
+      const scale = Math.min(1, maxSide / Math.max(w, h));
+
+      return {
+        width: Math.max(1, Math.round(w * scale)),
+        height: Math.max(1, Math.round(h * scale))
+      };
+    }
+
+    function renderPartsList(parts) {
+      partsList.innerHTML = "";
+
+      for (const part of parts) {
+        const card = document.createElement("div");
+        card.className = "part-card";
+
+        const ok = part.bytes <= Math.floor(clamp(Number(targetKbInput.value), 4, 15) * 1024);
+
+        card.innerHTML = `
+          <b>${part.name}</b><br>
+          サイズ: <span class="${ok ? "ok" : "ng"}">${formatBytes(part.bytes)}</span><br>
+          path数: ${part.pathCount}<br>
+          スライス: ${part.slice}/${part.totalSlices}<br>
+        `;
+
+        const btn = document.createElement("button");
+        btn.textContent = "このSVGを表示";
+        btn.className = "secondary";
+
+        btn.addEventListener("click", () => {
+          displayedSvg = part.svg;
+          svgOutput.value = part.svg;
+          svgPreview.innerHTML = part.svg;
+          statusEl.textContent = `${part.name} を表示しました。`;
+        });
+
+        const dl = document.createElement("button");
+        dl.textContent = "DL";
+        dl.addEventListener("click", () => {
+          downloadText(part.name, part.svg);
+        });
+
+        card.appendChild(btn);
+        card.appendChild(document.createTextNode(" "));
+        card.appendChild(dl);
+
+        partsList.appendChild(card);
+      }
+    }
+
+    function downloadText(filename, text) {
+      const blob = new Blob([text], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+    }
+
+    function appendLog(text) {
+      logOutput.value += text + "\n";
+      logOutput.scrollTop = logOutput.scrollHeight;
+    }
+
+    function byteSize(text) {
+      return new Blob([text]).size;
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) {
+        return `${bytes} B`;
+      }
+
+      return `${(bytes / 1024).toFixed(1)} KB`;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+
+    function waitFrame() {
+      return new Promise(resolve => requestAnimationFrame(resolve));
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+  </script>
+</body>
+</html>
