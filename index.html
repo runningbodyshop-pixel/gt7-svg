@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GT7 SVGOMG Flow Vectorizer + Split ZIP</title>
+  <title>GT7 SVGOMG Flow Vectorizer + Split ZIP + Lineart</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -49,7 +49,7 @@
     .control label { display: flex; flex-direction: column; gap: 8px; }
     .control.row label { flex-direction: row; align-items: center; }
     input[type="range"] { width: 100%; }
-    input[type="number"] {
+    input[type="number"], input[type="text"] {
       width: 90px;
       background: #050505;
       color: #fff;
@@ -72,7 +72,7 @@
     #status { margin-top: 16px; color: #aaa; font-size: 14px; line-height: 1.7; }
     .stats {
       display: grid;
-      grid-template-columns: repeat(6, 1fr);
+      grid-template-columns: repeat(7, 1fr);
       gap: 12px;
       margin-top: 16px;
     }
@@ -142,9 +142,9 @@
 </head>
 <body>
   <main class="app">
-    <h1>GT7 SVGOMG Flow Vectorizer + Split ZIP</h1>
+    <h1>GT7 SVGOMG Flow Vectorizer + Split ZIP + Lineart</h1>
     <p class="lead">
-      写真選択 → SVG生成 → SVGOMG風軽量化 → GT7互換チェック → 15KB分割 → ZIP出力の流れで処理します。
+      写真選択 → SVG生成 → SVGOMG風軽量化 → 線画SVG生成 → GT7互換チェック → 15KB分割 → ZIP出力の流れで処理します。
       分割後の重ね合わせプレビューと、part SVGのGT7対応チェックにも対応しています。
     </p>
 
@@ -209,11 +209,20 @@
         <div class="control row">
           <label><input id="gt7CheckInput" type="checkbox" checked /> GT7対応チェック</label>
         </div>
+        <div class="control row">
+          <label><input id="lineArtInput" type="checkbox" checked /> 輪郭を線画SVGとして別保存</label>
+        </div>
+        <div class="control">
+          <label>線画幅
+            <input id="lineWidthInput" type="number" min="0.2" max="3" step="0.1" value="0.8" />
+          </label>
+        </div>
       </div>
 
       <div class="buttons">
         <button id="vectorizeBtn" disabled>SVG→軽量化→分割</button>
         <button id="downloadFullBtn" class="secondary" disabled>軽量化後SVGをDL</button>
+        <button id="downloadLineArtBtn" class="secondary" disabled>線画SVGをDL</button>
         <button id="downloadZipBtn" class="secondary" disabled>分割SVGをZIPでDL</button>
         <button id="copyBtn" class="secondary" disabled>表示SVGコードをコピー</button>
       </div>
@@ -223,6 +232,7 @@
       <div class="stats">
         <div class="stat">生成SVG<b id="rawSize">-</b></div>
         <div class="stat">軽量化SVG<b id="fullSize">-</b></div>
+        <div class="stat">線画SVG<b id="lineArtSize">-</b></div>
         <div class="stat">分割数<b id="partsCount">-</b></div>
         <div class="stat">最大パート<b id="largestPart">-</b></div>
         <div class="stat">スライス数<b id="usedSlices">-</b></div>
@@ -241,6 +251,7 @@
         <div class="preview-tools">
           <button id="showFullBtn" class="secondary" disabled>完成SVG</button>
           <button id="showCombinedBtn" class="secondary" disabled>分割合成</button>
+          <button id="showLineArtBtn" class="secondary" disabled>線画</button>
           <button id="showSelectedBtn" class="secondary" disabled>選択パート</button>
         </div>
         <div id="svgPreview" class="svg-preview"></div>
@@ -258,7 +269,7 @@
 
     <p class="note">
       GT7では part-001.svg、part-002.svg… をアップロードし、同じ位置・同じサイズに重ねてください。
-      小さい番号を下、大きい番号を上に置く想定です。ZIPは外部ライブラリなしの無圧縮ZIPです。軽量化はSVGOMG風に、同色path結合・不要属性削除・空白圧縮・GT7向けチェックを行います。
+      小さい番号を下、大きい番号を上に置く想定です。ZIPは外部ライブラリなしの無圧縮ZIPです。軽量化はSVGOMG風に、同色path結合・不要属性削除・空白圧縮・GT7向けチェックを行います。輪郭は色面とは別に、まとめた線画SVGとして保存できます。
     </p>
   </main>
 
@@ -273,9 +284,11 @@
     const vectorizeBtn = document.getElementById("vectorizeBtn");
     const downloadFullBtn = document.getElementById("downloadFullBtn");
     const downloadZipBtn = document.getElementById("downloadZipBtn");
+    const downloadLineArtBtn = document.getElementById("downloadLineArtBtn");
     const copyBtn = document.getElementById("copyBtn");
     const showFullBtn = document.getElementById("showFullBtn");
     const showCombinedBtn = document.getElementById("showCombinedBtn");
+    const showLineArtBtn = document.getElementById("showLineArtBtn");
     const showSelectedBtn = document.getElementById("showSelectedBtn");
     const statusEl = document.getElementById("status");
 
@@ -291,6 +304,8 @@
     const mergeSameFillInput = document.getElementById("mergeSameFillInput");
     const removeWidthHeightInput = document.getElementById("removeWidthHeightInput");
     const gt7CheckInput = document.getElementById("gt7CheckInput");
+    const lineArtInput = document.getElementById("lineArtInput");
+    const lineWidthInput = document.getElementById("lineWidthInput");
 
     const colorsValue = document.getElementById("colorsValue");
     const maxSideValue = document.getElementById("maxSideValue");
@@ -299,6 +314,7 @@
 
     const rawSizeEl = document.getElementById("rawSize");
     const fullSizeEl = document.getElementById("fullSize");
+    const lineArtSizeEl = document.getElementById("lineArtSize");
     const partsCountEl = document.getElementById("partsCount");
     const largestPartEl = document.getElementById("largestPart");
     const usedSlicesEl = document.getElementById("usedSlices");
@@ -308,6 +324,8 @@
     let rawFullSvg = "";
     let fullSvg = "";
     let combinedPartsSvg = "";
+      lineArtSvg = "";
+    let lineArtSvg = "";
     let partFiles = [];
     let displayedSvg = "";
     let selectedPartIndex = 0;
@@ -354,7 +372,9 @@
         precision: clamp(Number(precisionInput.value), 0, 3),
         mergeSameFill: mergeSameFillInput.checked,
         removeWidthHeight: removeWidthHeightInput.checked,
-        gt7Check: gt7CheckInput.checked
+        gt7Check: gt7CheckInput.checked,
+        lineArt: lineArtInput.checked,
+        lineWidth: clamp(Number(lineWidthInput.value), 0.2, 3)
       };
 
       currentOptimizer = {
@@ -373,6 +393,7 @@
         rawFullSvg = result.rawFullSvg;
         fullSvg = result.fullSvg;
         combinedPartsSvg = result.combinedSvg;
+        lineArtSvg = result.lineArtSvg || "";
         partFiles = result.parts;
         fullWidth = result.width;
         fullHeight = result.height;
@@ -385,11 +406,13 @@
 
         const rawBytes = byteSize(rawFullSvg);
         const fullBytes = byteSize(fullSvg);
+        const lineArtBytes = lineArtSvg ? byteSize(lineArtSvg) : 0;
         const largest = partFiles.reduce((m, p) => Math.max(m, p.bytes), 0);
         const passed = partFiles.every(p => p.bytes <= options.targetBytes && (!p.gt7 || p.gt7.ok));
 
         rawSizeEl.textContent = formatBytes(rawBytes);
         fullSizeEl.textContent = formatBytes(fullBytes);
+        lineArtSizeEl.textContent = lineArtSvg ? formatBytes(lineArtBytes) : "-";
         partsCountEl.textContent = String(partFiles.length);
         largestPartEl.textContent = formatBytes(largest);
         usedSlicesEl.textContent = String(result.slices);
@@ -397,9 +420,11 @@
 
         downloadFullBtn.disabled = false;
         downloadZipBtn.disabled = partFiles.length === 0;
+        downloadLineArtBtn.disabled = !lineArtSvg;
         copyBtn.disabled = false;
         showFullBtn.disabled = false;
         showCombinedBtn.disabled = false;
+        showLineArtBtn.disabled = !lineArtSvg;
         showSelectedBtn.disabled = partFiles.length === 0;
 
         statusEl.textContent = passed
@@ -418,9 +443,15 @@
       downloadText("full-vectorized.svg", fullSvg, "image/svg+xml");
     });
 
+    downloadLineArtBtn.addEventListener("click", () => {
+      if (!lineArtSvg) return;
+      downloadText("lineart.svg", lineArtSvg, "image/svg+xml");
+    });
+
     downloadZipBtn.addEventListener("click", () => {
       if (!partFiles.length) return;
       const files = partFiles.map(part => ({ name: part.name, text: part.svg }));
+      if (lineArtSvg) files.push({ name: "lineart.svg", text: lineArtSvg });
       const zipBlob = createZipBlob(files);
       downloadBlob("gt7-svg-parts.zip", zipBlob);
       statusEl.textContent = `ZIPを作成しました。${partFiles.length}個のSVGをまとめています。`;
@@ -444,6 +475,12 @@
       clearActivePartCards();
     });
 
+    showLineArtBtn.addEventListener("click", () => {
+      if (!lineArtSvg) return;
+      showSvg(lineArtSvg, "輪郭をまとめた線画SVGを表示しました。");
+      clearActivePartCards();
+    });
+
     showSelectedBtn.addEventListener("click", () => {
       if (!partFiles.length) return;
       selectPart(selectedPartIndex);
@@ -462,8 +499,13 @@
 
       const rawFullResult = makeRawSvg(width, height, fullPaths);
       const fullResult = makeSvg(width, height, fullPaths);
+      const lineArtResult = options.lineArt ? makeLineArtSvg(width, height, base.labels, base.palette, options) : { svg: "", bytes: 0 };
       appendLog(`SVG生成: ${formatBytes(byteSize(rawFullResult.svg))} / path:${fullPaths.length}`);
       appendLog(`SVGOMG風軽量化: ${formatBytes(byteSize(rawFullResult.svg))} → ${formatBytes(byteSize(fullResult.svg))}`);
+      if (lineArtResult.svg) {
+        appendLog(`線画SVG生成: ${formatBytes(lineArtResult.bytes)} / pathを崩さず境界線をランレングス圧縮`);
+        if (options.gt7Check) appendGt7CheckLog("線画SVG", checkGt7Compatibility(lineArtResult.svg, options.targetBytes, false), false);
+      }
       if (options.gt7Check) {
         const fullCheck = checkGt7Compatibility(fullResult.svg, options.targetBytes, false);
         appendGt7CheckLog("軽量化後SVG", fullCheck, false);
@@ -485,6 +527,7 @@
         return {
           rawFullSvg: rawFullResult.svg,
           fullSvg: fullResult.svg,
+          lineArtSvg: lineArtResult.svg,
           combinedSvg: makeCombinedSvg(width, height, [single]),
           parts: [single],
           slices: 1,
@@ -510,8 +553,9 @@
 
         const candidate = {
           rawFullSvg: rawFullResult.svg,
-          rawFullSvg: rawFullResult.svg,
           fullSvg: fullResult.svg,
+          lineArtSvg: lineArtResult.svg,
+          lineArtSvg: lineArtResult.svg,
           combinedSvg: makeCombinedSvg(width, height, parts),
           parts,
           slices,
@@ -839,6 +883,71 @@
       return parts.join(" ");
     }
 
+
+    function makeLineArtSvg(width, height, labels, palette, options) {
+      const d = buildLineArtPathData(labels, width, height, palette, options);
+      if (!d) return { svg: "", bytes: 0 };
+      const strokeWidth = num(options.lineWidth || 0.8);
+      const svg = finalMinifySvg(
+        `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}"><path d="${d}" fill="none" stroke="#111" stroke-width="${strokeWidth}" stroke-linecap="round" stroke-linejoin="round"/></svg>`
+      );
+      return { svg, bytes: byteSize(svg) };
+    }
+
+    function buildLineArtPathData(labels, width, height, palette, options) {
+      const threshold = 28;
+      const threshold2 = threshold * threshold;
+      const segments = [];
+      const isOpaque = label => label >= 0;
+      const shouldDrawBoundary = (a, b) => {
+        if (a === b) return false;
+        if (isOpaque(a) !== isOpaque(b)) return true;
+        if (!isOpaque(a) && !isOpaque(b)) return false;
+        const ca = palette[a];
+        const cb = palette[b];
+        const dr = ca[0] - cb[0];
+        const dg = ca[1] - cb[1];
+        const db = ca[2] - cb[2];
+        return dr * dr + dg * dg + db * db >= threshold2;
+      };
+      const labelAt = (x, y) => {
+        if (x < 0 || x >= width || y < 0 || y >= height) return -1;
+        return labels[y * width + x];
+      };
+
+      for (let x = 0; x <= width; x++) {
+        let runStart = -1;
+        for (let y = 0; y < height; y++) {
+          const left = labelAt(x - 1, y);
+          const right = labelAt(x, y);
+          if (shouldDrawBoundary(left, right)) {
+            if (runStart < 0) runStart = y;
+          } else if (runStart >= 0) {
+            segments.push(`M${num(x)} ${num(runStart)}V${num(y)}`);
+            runStart = -1;
+          }
+        }
+        if (runStart >= 0) segments.push(`M${num(x)} ${num(runStart)}V${num(height)}`);
+      }
+
+      for (let y = 0; y <= height; y++) {
+        let runStart = -1;
+        for (let x = 0; x < width; x++) {
+          const top = labelAt(x, y - 1);
+          const bottom = labelAt(x, y);
+          if (shouldDrawBoundary(top, bottom)) {
+            if (runStart < 0) runStart = x;
+          } else if (runStart >= 0) {
+            segments.push(`M${num(runStart)} ${num(y)}H${num(x)}`);
+            runStart = -1;
+          }
+        }
+        if (runStart >= 0) segments.push(`M${num(runStart)} ${num(y)}H${num(width)}`);
+      }
+
+      return segments.join("");
+    }
+
     function makeRawSvg(width, height, paths) {
       const body = paths.map(p => `  <path fill="${p.fill}" fill-rule="evenodd" d="${p.d}" />`).join("\n");
       const svg = `<svg xmlns="http://www.w3.org/2000/svg" version="1.1" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">\n${body}\n</svg>`;
@@ -1057,7 +1166,7 @@
           errors.push("XMLとして解析できません");
         } else {
           const allowedTags = new Set(["svg", "g", "path"]);
-          const allowedAttrs = new Set(["xmlns", "viewBox", "viewbox", "version", "width", "height", "fill", "fill-rule", "d"]);
+          const allowedAttrs = new Set(["xmlns", "viewBox", "viewbox", "version", "width", "height", "fill", "fill-rule", "d", "stroke", "stroke-width", "stroke-linecap", "stroke-linejoin"]);
           const all = [doc.documentElement, ...Array.from(doc.documentElement.querySelectorAll("*"))];
           for (const el of all) {
             const tag = el.tagName;
@@ -1185,6 +1294,7 @@
       fullSvg = "";
       combinedPartsSvg = "";
       partFiles = [];
+      lineArtSvg = "";
       displayedSvg = "";
       selectedPartIndex = 0;
       fullWidth = 0;
@@ -1196,15 +1306,18 @@
       partsList.innerHTML = "";
       rawSizeEl.textContent = "-";
       fullSizeEl.textContent = "-";
+      lineArtSizeEl.textContent = "-";
       partsCountEl.textContent = "-";
       largestPartEl.textContent = "-";
       usedSlicesEl.textContent = "-";
       resultStatusEl.textContent = "-";
       downloadFullBtn.disabled = true;
       downloadZipBtn.disabled = true;
+      downloadLineArtBtn.disabled = true;
       copyBtn.disabled = true;
       showFullBtn.disabled = true;
       showCombinedBtn.disabled = true;
+      showLineArtBtn.disabled = true;
       showSelectedBtn.disabled = true;
       if (disableVectorize) vectorizeBtn.disabled = true;
     }
