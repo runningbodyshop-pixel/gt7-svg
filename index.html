@@ -274,6 +274,10 @@
   </main>
 
   <script>
+    window.addEventListener('error', event => {
+      const el = document.getElementById('status');
+      if (el) el.textContent = 'JavaScriptエラー: ' + event.message;
+    });
     const fileInput = document.getElementById("fileInput");
     const sourceCanvas = document.getElementById("sourceCanvas");
     const svgPreview = document.getElementById("svgPreview");
@@ -324,7 +328,6 @@
     let rawFullSvg = "";
     let fullSvg = "";
     let combinedPartsSvg = "";
-      lineArtSvg = "";
     let lineArtSvg = "";
     let partFiles = [];
     let displayedSvg = "";
@@ -344,14 +347,24 @@
     }
 
     fileInput.addEventListener("change", async () => {
-      const file = fileInput.files[0];
-      if (!file) return;
+      const file = fileInput.files && fileInput.files[0];
+      if (!file) {
+        statusEl.textContent = "画像ファイルが選択されていません。";
+        return;
+      }
 
-      loadedImage = await loadImage(file);
-      resetOutputs();
-      drawSourceImage();
-      vectorizeBtn.disabled = false;
-      statusEl.textContent = "画像を読み込みました。SVG化して分割できます。";
+      try {
+        loadedImage = await loadImage(file);
+        resetOutputs();
+        drawSourceImage();
+        vectorizeBtn.disabled = false;
+        statusEl.textContent = "画像を読み込みました。SVG化して分割できます。";
+      } catch (error) {
+        console.error(error);
+        loadedImage = null;
+        vectorizeBtn.disabled = true;
+        statusEl.textContent = "画像の読み込みに失敗しました。PNG/JPG/WebPで試してください。";
+      }
     });
 
     vectorizeBtn.addEventListener("click", async () => {
