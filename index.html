@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GT7 Hi-Res Lightweight SVG Splitter</title>
+  <title>GT7 High Quality Low-Simplify SVG Splitter</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -142,10 +142,10 @@
 </head>
 <body>
   <main class="app">
-    <h1>GT7 Hi-Res Lightweight SVG Splitter</h1>
+    <h1>GT7 High Quality Low-Simplify SVG Splitter</h1>
     <p class="lead">
       写真選択 → SVG生成 → SVGOMG風軽量化 → GT7互換チェック → 最大60分割 → ZIP出力の流れで処理します。
-      高めの解像度でも軽くしやすい相対パス化と、パス同士の隙間を埋める自動ブリードに対応しています。
+      輪郭簡略化を低い値のまま保ち、H/V相対パス圧縮・同色結合・最大60分割・自動ブリードで容量を逃がします。
     </p>
 
     <section class="panel">
@@ -162,26 +162,26 @@
         </div>
         <div class="control">
           <label>色数
-            <input id="colorsInput" type="range" min="4" max="64" value="24" />
-            <span><b id="colorsValue">24</b></span>
+            <input id="colorsInput" type="range" min="4" max="80" value="32" />
+            <span><b id="colorsValue">32</b></span>
           </label>
         </div>
         <div class="control">
           <label>最大サイズ
-            <input id="maxSideInput" type="range" min="500" max="2600" step="50" value="1400" />
-            <span><b id="maxSideValue">1400</b>px</span>
+            <input id="maxSideInput" type="range" min="500" max="3000" step="50" value="1800" />
+            <span><b id="maxSideValue">1800</b>px</span>
           </label>
         </div>
         <div class="control">
           <label>最小パーツ面積
-            <input id="minAreaInput" type="range" min="1" max="500" value="30" />
-            <span><b id="minAreaValue">30</b></span>
+            <input id="minAreaInput" type="range" min="1" max="500" value="12" />
+            <span><b id="minAreaValue">12</b></span>
           </label>
         </div>
         <div class="control">
           <label>輪郭簡略化
-            <input id="simplifyInput" type="range" min="0" max="8" step="0.25" value="1.25" />
-            <span><b id="simplifyValue">1.25</b></span>
+            <input id="simplifyInput" type="range" min="0" max="3" step="0.05" value="0.35" />
+            <span><b id="simplifyValue">0.35</b></span>
           </label>
         </div>
         <div class="control">
@@ -205,6 +205,12 @@
         </div>
         <div class="control row">
           <label><input id="relativePathInput" type="checkbox" checked /> SVGOMG風: 相対パスで軽量化</label>
+        </div>
+        <div class="control row">
+          <label><input id="smartPathInput" type="checkbox" checked /> 高品質圧縮: H/V最短パス化</label>
+        </div>
+        <div class="control row">
+          <label><input id="lowSimplifyLockInput" type="checkbox" checked /> 輪郭簡略を低く維持</label>
         </div>
         <div class="control row">
           <label><input id="gapFillInput" type="checkbox" checked /> パス同士の隙間を自動で埋める</label>
@@ -269,7 +275,7 @@
 
     <p class="note">
       GT7では part-001.svg、part-002.svg… をアップロードし、同じ位置・同じサイズに重ねてください。
-      小さい番号を下、大きい番号を上に置く想定です。ZIPは外部ライブラリなしの無圧縮ZIPです。軽量化はSVGOMG風に、同色path結合・不要属性削除・空白圧縮・GT7向けチェックを行います。
+      小さい番号を下、大きい番号を上に置く想定です。ZIPは外部ライブラリなしの無圧縮ZIPです。高品質モードでは輪郭簡略化を上げず、H/V最短パス化・同色path結合・空白圧縮・分割で容量を抑えます。
     </p>
   </main>
 
@@ -301,6 +307,8 @@
     const precisionInput = document.getElementById("precisionInput");
     const mergeSameFillInput = document.getElementById("mergeSameFillInput");
     const relativePathInput = document.getElementById("relativePathInput");
+    const smartPathInput = document.getElementById("smartPathInput");
+    const lowSimplifyLockInput = document.getElementById("lowSimplifyLockInput");
     const gapFillInput = document.getElementById("gapFillInput");
     const bleedWidthInput = document.getElementById("bleedWidthInput");
     const removeWidthHeightInput = document.getElementById("removeWidthHeightInput");
@@ -328,7 +336,7 @@
     let previewUrl = "";
     let fullWidth = 0;
     let fullHeight = 0;
-    let currentOptimizer = { precision: 0, mergeSameFill: true, removeWidthHeight: true, gt7Check: true };
+    let currentOptimizer = { precision: 0, mergeSameFill: true, removeWidthHeight: true, gt7Check: true, smartPath: true, lowSimplifyLock: true };
 
     bindRange(colorsInput, colorsValue);
     bindRange(maxSideInput, maxSideValue);
@@ -358,10 +366,10 @@
 
       const options = {
         targetBytes: Math.floor(clamp(Number(targetKbInput.value), 4, 15) * 1024),
-        colors: clamp(Number(colorsInput.value), 4, 64),
-        maxSide: clamp(Number(maxSideInput.value), 500, 2600),
+        colors: clamp(Number(colorsInput.value), 4, 80),
+        maxSide: clamp(Number(maxSideInput.value), 500, 3000),
         minArea: clamp(Number(minAreaInput.value), 1, 500),
-        simplify: clamp(Number(simplifyInput.value), 0, 8),
+        simplify: clamp(Number(simplifyInput.value), 0, 3),
         maxSlices: clamp(Number(maxSlicesInput.value), 1, 60),
         maxParts: clamp(Number(maxSlicesInput.value), 1, 60),
         split: splitInput.checked,
@@ -369,6 +377,8 @@
         precision: clamp(Number(precisionInput.value), 0, 3),
         mergeSameFill: mergeSameFillInput.checked,
         relativePath: relativePathInput.checked,
+        smartPath: smartPathInput.checked,
+        lowSimplifyLock: lowSimplifyLockInput.checked,
         bleedWidth: gapFillInput.checked ? clamp(Number(bleedWidthInput.value), 0, 2) : 0,
         removeWidthHeight: removeWidthHeightInput.checked,
         gt7Check: gt7CheckInput.checked
@@ -378,6 +388,8 @@
         precision: options.precision,
         mergeSameFill: options.mergeSameFill,
         relativePath: options.relativePath,
+        smartPath: options.smartPath,
+        lowSimplifyLock: options.lowSimplifyLock,
         bleedWidth: options.bleedWidth,
         removeWidthHeight: options.removeWidthHeight,
         gt7Check: options.gt7Check
@@ -385,6 +397,8 @@
 
       try {
         statusEl.textContent = "画像を解析中...";
+        appendLog(`高品質モード: 簡略化 ${options.simplify} / 最大サイズ ${options.maxSide}px / 色数 ${options.colors}`);
+        appendLog(options.lowSimplifyLock ? "輪郭簡略を低く維持: ON（容量調整は分割とパス圧縮で対応）" : "輪郭簡略を低く維持: OFF");
         await waitFrame();
 
         const result = await vectorizeAndSplit(loadedImage, options);
@@ -529,7 +543,6 @@
         appendLog(`${passed ? "OK" : "NG"} / スライス:${slices} / 分割数:${parts.length}/${options.maxParts} / 最大:${formatBytes(largest)}`);
 
         const candidate = {
-          rawFullSvg: rawFullResult.svg,
           rawFullSvg: rawFullResult.svg,
           fullSvg: fullResult.svg,
           combinedSvg: makeCombinedSvg(width, height, parts),
@@ -890,9 +903,25 @@
     }
 
     function loopsToCompactPathD(loops) {
+      if (currentOptimizer.smartPath) {
+        const absolute = loopsToAbsolutePathD(loops);
+        const relative = loopsToRelativePathD(loops);
+        const hv = loopsToHvRelativePathD(loops);
+        return shortestString([absolute, relative, hv]);
+      }
+
       return currentOptimizer.relativePath
         ? loopsToRelativePathD(loops)
         : loopsToAbsolutePathD(loops);
+    }
+
+    function shortestString(items) {
+      let best = "";
+      for (const item of items) {
+        if (!item) continue;
+        if (!best || item.length < best.length) best = item;
+      }
+      return best;
     }
 
     function loopsToAbsolutePathD(loops) {
@@ -900,14 +929,15 @@
       for (const loop of loops) {
         if (loop.length < 4) continue;
         const first = loop[0];
-        parts.push(`M${num(first[0])} ${num(first[1])}`);
+        const coords = [`M${num(first[0])} ${num(first[1])}`];
         for (let i = 1; i < loop.length - 1; i++) {
           const p = loop[i];
-          parts.push(`${num(p[0])} ${num(p[1])}`);
+          coords.push(`${num(p[0])} ${num(p[1])}`);
         }
-        parts.push("Z");
+        coords.push("Z");
+        parts.push(coords.join(" "));
       }
-      return parts.join(" ");
+      return parts.join("");
     }
 
     function loopsToRelativePathD(loops) {
@@ -917,8 +947,6 @@
         if (loop.length < 4) continue;
 
         const first = loop[0];
-        parts.push(`M${num(first[0])} ${num(first[1])}`);
-
         const rel = [];
         let px = first[0];
         let py = first[1];
@@ -932,11 +960,42 @@
           py = p[1];
         }
 
-        if (rel.length) {
-          parts.push(`l${rel.join(" ")}`);
+        parts.push(`M${num(first[0])} ${num(first[1])}` + (rel.length ? `l${rel.join(" ")}` : "") + "Z");
+      }
+
+      return parts.join("");
+    }
+
+    function loopsToHvRelativePathD(loops) {
+      const parts = [];
+
+      for (const loop of loops) {
+        if (loop.length < 4) continue;
+
+        const first = loop[0];
+        let d = `M${num(first[0])} ${num(first[1])}`;
+        let px = first[0];
+        let py = first[1];
+
+        for (let i = 1; i < loop.length - 1; i++) {
+          const p = loop[i];
+          const dx = p[0] - px;
+          const dy = p[1] - py;
+
+          if (dy === 0 && dx !== 0) {
+            d += `h${num(dx)}`;
+          } else if (dx === 0 && dy !== 0) {
+            d += `v${num(dy)}`;
+          } else if (dx !== 0 || dy !== 0) {
+            d += `l${num(dx)} ${num(dy)}`;
+          }
+
+          px = p[0];
+          py = p[1];
         }
 
-        parts.push("Z");
+        d += "Z";
+        parts.push(d);
       }
 
       return parts.join("");
