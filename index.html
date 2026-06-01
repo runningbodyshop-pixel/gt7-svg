@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>GT7 SVGOMG Flow Vectorizer + Split ZIP + Lineart</title>
+  <title>GT7 SVGOMG Flow Vectorizer + Color Layers</title>
   <style>
     * { box-sizing: border-box; }
     body {
@@ -142,7 +142,7 @@
 </head>
 <body>
   <main class="app">
-    <h1>GT7 SVGOMG Flow Vectorizer + Split ZIP + Lineart</h1>
+    <h1>GT7 SVGOMG Flow Vectorizer + Color Layers</h1>
     <p class="lead">
       写真選択 → SVG生成 → SVGOMG風軽量化 → 線画SVG生成 → GT7互換チェック → 15KB分割 → ZIP出力の流れで処理します。
       分割後の重ね合わせプレビューと、part SVGのGT7対応チェックにも対応しています。
@@ -186,7 +186,7 @@
         </div>
         <div class="control">
           <label>自動スライス最大数
-            <input id="maxSlicesInput" type="number" min="1" max="64" value="24" />
+            <input id="maxSlicesInput" type="number" min="1" max="60" value="24" />
           </label>
         </div>
         <div class="control row">
@@ -210,11 +210,11 @@
           <label><input id="gt7CheckInput" type="checkbox" checked /> GT7対応チェック</label>
         </div>
         <div class="control row">
-          <label><input id="lineArtInput" type="checkbox" checked /> 輪郭を線画SVGとして別保存</label>
+          <label><input id="colorLayerInput" type="checkbox" checked /> 色ごとにレイヤー分けして出力</label>
         </div>
         <div class="control">
-          <label>線画幅
-            <input id="lineWidthInput" type="number" min="0.2" max="3" step="0.1" value="0.8" />
+          <label>最大分割数
+            <input id="maxPartsInput" type="number" min="1" max="60" value="60" />
           </label>
         </div>
       </div>
@@ -222,7 +222,6 @@
       <div class="buttons">
         <button id="vectorizeBtn" disabled>SVG→軽量化→分割</button>
         <button id="downloadFullBtn" class="secondary" disabled>軽量化後SVGをDL</button>
-        <button id="downloadLineArtBtn" class="secondary" disabled>線画SVGをDL</button>
         <button id="downloadZipBtn" class="secondary" disabled>分割SVGをZIPでDL</button>
         <button id="copyBtn" class="secondary" disabled>表示SVGコードをコピー</button>
       </div>
@@ -232,8 +231,8 @@
       <div class="stats">
         <div class="stat">生成SVG<b id="rawSize">-</b></div>
         <div class="stat">軽量化SVG<b id="fullSize">-</b></div>
-        <div class="stat">線画SVG<b id="lineArtSize">-</b></div>
         <div class="stat">分割数<b id="partsCount">-</b></div>
+        <div class="stat">レイヤー数<b id="layerCount">-</b></div>
         <div class="stat">最大パート<b id="largestPart">-</b></div>
         <div class="stat">スライス数<b id="usedSlices">-</b></div>
         <div class="stat">GT7判定<b id="resultStatus">-</b></div>
@@ -251,8 +250,7 @@
         <div class="preview-tools">
           <button id="showFullBtn" class="secondary" disabled>完成SVG</button>
           <button id="showCombinedBtn" class="secondary" disabled>分割合成</button>
-          <button id="showLineArtBtn" class="secondary" disabled>線画</button>
-          <button id="showSelectedBtn" class="secondary" disabled>選択パート</button>
+                    <button id="showSelectedBtn" class="secondary" disabled>選択パート</button>
         </div>
         <div id="svgPreview" class="svg-preview"></div>
       </section>
@@ -288,12 +286,10 @@
     const vectorizeBtn = document.getElementById("vectorizeBtn");
     const downloadFullBtn = document.getElementById("downloadFullBtn");
     const downloadZipBtn = document.getElementById("downloadZipBtn");
-    const downloadLineArtBtn = document.getElementById("downloadLineArtBtn");
-    const copyBtn = document.getElementById("copyBtn");
+        const copyBtn = document.getElementById("copyBtn");
     const showFullBtn = document.getElementById("showFullBtn");
     const showCombinedBtn = document.getElementById("showCombinedBtn");
-    const showLineArtBtn = document.getElementById("showLineArtBtn");
-    const showSelectedBtn = document.getElementById("showSelectedBtn");
+        const showSelectedBtn = document.getElementById("showSelectedBtn");
     const statusEl = document.getElementById("status");
 
     const targetKbInput = document.getElementById("targetKbInput");
@@ -308,9 +304,9 @@
     const mergeSameFillInput = document.getElementById("mergeSameFillInput");
     const removeWidthHeightInput = document.getElementById("removeWidthHeightInput");
     const gt7CheckInput = document.getElementById("gt7CheckInput");
-    const lineArtInput = document.getElementById("lineArtInput");
-    const lineWidthInput = document.getElementById("lineWidthInput");
-
+    const colorLayerInput = document.getElementById("colorLayerInput");
+    const maxPartsInput = document.getElementById("maxPartsInput");
+        
     const colorsValue = document.getElementById("colorsValue");
     const maxSideValue = document.getElementById("maxSideValue");
     const minAreaValue = document.getElementById("minAreaValue");
@@ -318,17 +314,16 @@
 
     const rawSizeEl = document.getElementById("rawSize");
     const fullSizeEl = document.getElementById("fullSize");
-    const lineArtSizeEl = document.getElementById("lineArtSize");
-    const partsCountEl = document.getElementById("partsCount");
+        const partsCountEl = document.getElementById("partsCount");
     const largestPartEl = document.getElementById("largestPart");
     const usedSlicesEl = document.getElementById("usedSlices");
     const resultStatusEl = document.getElementById("resultStatus");
+    const layerCountEl = document.getElementById("layerCount");
 
     let loadedImage = null;
     let rawFullSvg = "";
     let fullSvg = "";
     let combinedPartsSvg = "";
-    let lineArtSvg = "";
     let partFiles = [];
     let displayedSvg = "";
     let selectedPartIndex = 0;
@@ -386,8 +381,8 @@
         mergeSameFill: mergeSameFillInput.checked,
         removeWidthHeight: removeWidthHeightInput.checked,
         gt7Check: gt7CheckInput.checked,
-        lineArt: lineArtInput.checked,
-        lineWidth: clamp(Number(lineWidthInput.value), 0.2, 3)
+        colorLayer: colorLayerInput.checked,
+        maxParts: clamp(Number(maxPartsInput.value), 1, 60)
       };
 
       currentOptimizer = {
@@ -406,7 +401,6 @@
         rawFullSvg = result.rawFullSvg;
         fullSvg = result.fullSvg;
         combinedPartsSvg = result.combinedSvg;
-        lineArtSvg = result.lineArtSvg || "";
         partFiles = result.parts;
         fullWidth = result.width;
         fullHeight = result.height;
@@ -419,25 +413,22 @@
 
         const rawBytes = byteSize(rawFullSvg);
         const fullBytes = byteSize(fullSvg);
-        const lineArtBytes = lineArtSvg ? byteSize(lineArtSvg) : 0;
         const largest = partFiles.reduce((m, p) => Math.max(m, p.bytes), 0);
         const passed = partFiles.every(p => p.bytes <= options.targetBytes && (!p.gt7 || p.gt7.ok));
 
         rawSizeEl.textContent = formatBytes(rawBytes);
         fullSizeEl.textContent = formatBytes(fullBytes);
-        lineArtSizeEl.textContent = lineArtSvg ? formatBytes(lineArtBytes) : "-";
         partsCountEl.textContent = String(partFiles.length);
+        layerCountEl.textContent = String(new Set(partFiles.map(p => p.layerKey || p.fill || "")).size || 0);
         largestPartEl.textContent = formatBytes(largest);
         usedSlicesEl.textContent = String(result.slices);
         resultStatusEl.innerHTML = passed ? '<span class="ok">OK</span>' : '<span class="ng">一部超過</span>';
 
         downloadFullBtn.disabled = false;
         downloadZipBtn.disabled = partFiles.length === 0;
-        downloadLineArtBtn.disabled = !lineArtSvg;
         copyBtn.disabled = false;
         showFullBtn.disabled = false;
         showCombinedBtn.disabled = false;
-        showLineArtBtn.disabled = !lineArtSvg;
         showSelectedBtn.disabled = partFiles.length === 0;
 
         statusEl.textContent = passed
@@ -456,15 +447,9 @@
       downloadText("full-vectorized.svg", fullSvg, "image/svg+xml");
     });
 
-    downloadLineArtBtn.addEventListener("click", () => {
-      if (!lineArtSvg) return;
-      downloadText("lineart.svg", lineArtSvg, "image/svg+xml");
-    });
-
     downloadZipBtn.addEventListener("click", () => {
       if (!partFiles.length) return;
       const files = partFiles.map(part => ({ name: part.name, text: part.svg }));
-      if (lineArtSvg) files.push({ name: "lineart.svg", text: lineArtSvg });
       const zipBlob = createZipBlob(files);
       downloadBlob("gt7-svg-parts.zip", zipBlob);
       statusEl.textContent = `ZIPを作成しました。${partFiles.length}個のSVGをまとめています。`;
@@ -488,12 +473,6 @@
       clearActivePartCards();
     });
 
-    showLineArtBtn.addEventListener("click", () => {
-      if (!lineArtSvg) return;
-      showSvg(lineArtSvg, "輪郭をまとめた線画SVGを表示しました。");
-      clearActivePartCards();
-    });
-
     showSelectedBtn.addEventListener("click", () => {
       if (!partFiles.length) return;
       selectPart(selectedPartIndex);
@@ -512,13 +491,9 @@
 
       const rawFullResult = makeRawSvg(width, height, fullPaths);
       const fullResult = makeSvg(width, height, fullPaths);
-      const lineArtResult = options.lineArt ? makeLineArtSvg(width, height, base.labels, base.palette, options) : { svg: "", bytes: 0 };
       appendLog(`SVG生成: ${formatBytes(byteSize(rawFullResult.svg))} / path:${fullPaths.length}`);
       appendLog(`SVGOMG風軽量化: ${formatBytes(byteSize(rawFullResult.svg))} → ${formatBytes(byteSize(fullResult.svg))}`);
-      if (lineArtResult.svg) {
-        appendLog(`線画SVG生成: ${formatBytes(lineArtResult.bytes)} / pathを崩さず境界線をランレングス圧縮`);
-        if (options.gt7Check) appendGt7CheckLog("線画SVG", checkGt7Compatibility(lineArtResult.svg, options.targetBytes, false), false);
-      }
+      appendLog(`出力方式: 色ごとにレイヤー分けして、貼る順番どおりに part を並べます。`);
       if (options.gt7Check) {
         const fullCheck = checkGt7Compatibility(fullResult.svg, options.targetBytes, false);
         appendGt7CheckLog("軽量化後SVG", fullCheck, false);
@@ -540,7 +515,6 @@
         return {
           rawFullSvg: rawFullResult.svg,
           fullSvg: fullResult.svg,
-          lineArtSvg: lineArtResult.svg,
           combinedSvg: makeCombinedSvg(width, height, [single]),
           parts: [single],
           slices: 1,
@@ -560,15 +534,13 @@
           base.labels, width, height, base.palette, slices, options
         );
         const largest = parts.reduce((m, p) => Math.max(m, p.bytes), 0);
-        const passed = parts.every(p => p.bytes <= options.targetBytes && (!p.gt7 || p.gt7.ok));
+        const passed = parts.length <= options.maxParts && parts.every(p => p.bytes <= options.targetBytes && (!p.gt7 || p.gt7.ok));
 
-        appendLog(`${passed ? "OK" : "NG"} / スライス:${slices} / 分割数:${parts.length} / 最大:${formatBytes(largest)}`);
+        appendLog(`${passed ? "OK" : "NG"} / スライス:${slices} / 分割数:${parts.length}/${options.maxParts} / 最大:${formatBytes(largest)}`);
 
         const candidate = {
           rawFullSvg: rawFullResult.svg,
           fullSvg: fullResult.svg,
-          lineArtSvg: lineArtResult.svg,
-          lineArtSvg: lineArtResult.svg,
           combinedSvg: makeCombinedSvg(width, height, parts),
           parts,
           slices,
@@ -585,15 +557,16 @@
     }
 
     function buildSliceCandidates(maxSlices) {
-      const base = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 64];
+      const base = [1, 2, 3, 4, 5, 6, 8, 10, 12, 16, 20, 24, 32, 40, 48, 56, 60];
       const values = base.filter(v => v <= maxSlices);
       if (!values.includes(maxSlices)) values.push(maxSlices);
       return Array.from(new Set(values)).sort((a, b) => a - b);
     }
 
     function makeSplitPartsFromSlices(labels, width, height, palette, slices, options) {
-      const allParts = [];
-      let partIndex = 1;
+      const sliceMaps = [];
+      const colorOrder = [];
+      const seenColors = new Set();
 
       for (let s = 0; s < slices; s++) {
         const x0 = Math.floor(width * s / slices);
@@ -603,26 +576,70 @@
           labels, width, height, palette,
           x0, x1, options.minArea, options.simplify, options.shortColor
         );
-        paths.sort((a, b) => b.area - a.area);
 
-        const groups = splitPathsByTargetBytes(width, height, paths, options.targetBytes);
+        const byFill = new Map();
+        for (const p of paths) {
+          if (!seenColors.has(p.fill)) {
+            seenColors.add(p.fill);
+            colorOrder.push(p.fill);
+          }
+          if (!byFill.has(p.fill)) byFill.set(p.fill, []);
+          byFill.get(p.fill).push(p);
+        }
+        sliceMaps.push({ slice: s + 1, totalSlices: slices, byFill });
+      }
 
-        for (const group of groups) {
-          const made = makeSvg(width, height, group);
+      const allParts = [];
+      let partIndex = 1;
+
+      for (let layerIndex = 0; layerIndex < colorOrder.length; layerIndex++) {
+        const fill = colorOrder[layerIndex];
+        let current = [];
+        let slicesUsed = [];
+
+        function flushCurrent() {
+          if (!current.length) return;
+          const made = makeSvg(width, height, current);
           const check = options.gt7Check ? checkGt7Compatibility(made.svg, options.targetBytes, true) : null;
+          const safeColor = String(fill).replace('#', '');
           allParts.push({
-            name: `part-${String(partIndex).padStart(3, "0")}.svg`,
+            name: `part-${String(partIndex).padStart(3, "0")}_layer-${String(layerIndex + 1).padStart(2, "0")}_${safeColor}.svg`,
             svg: made.svg,
             inner: made.inner,
             bytes: byteSize(made.svg),
             gt7: check,
             index: partIndex,
-            slice: s + 1,
+            slice: slicesUsed.length ? slicesUsed[0] : 1,
             totalSlices: slices,
-            pathCount: group.length
+            sliceRange: slicesUsed.slice(),
+            pathCount: current.length,
+            fill,
+            layerIndex: layerIndex + 1,
+            layerKey: fill
           });
           partIndex++;
+          current = [];
+          slicesUsed = [];
         }
+
+        for (const info of sliceMaps) {
+          const bucket = info.byFill.get(fill);
+          if (!bucket || !bucket.length) continue;
+
+          for (const path of bucket) {
+            const test = current.concat(path);
+            const testBytes = byteSize(makeSvg(width, height, test).svg);
+
+            if (current.length && testBytes > options.targetBytes) {
+              flushCurrent();
+            }
+
+            current.push(path);
+            if (!slicesUsed.includes(info.slice)) slicesUsed.push(info.slice);
+          }
+        }
+
+        flushCurrent();
       }
 
       return allParts;
@@ -1222,8 +1239,9 @@
           サイズ: <span class="${ok ? "ok" : "ng"}">${formatBytes(part.bytes)}</span><br>
           GT7: <span class="${gt7Class}">${gt7Text}</span><br>
           <span class="small">${gt7Detail}</span>
+          レイヤー: ${part.layerIndex || "-"} / 色: ${part.fill || "-"}<br>
           path数: ${part.pathCount}<br>
-          スライス: ${part.slice}/${part.totalSlices}<br>
+          スライス: ${part.sliceRange && part.sliceRange.length ? part.sliceRange.join(",") : (part.slice + "/" + part.totalSlices)}<br>
         `;
 
         const showBtn = document.createElement("button");
@@ -1307,7 +1325,6 @@
       fullSvg = "";
       combinedPartsSvg = "";
       partFiles = [];
-      lineArtSvg = "";
       displayedSvg = "";
       selectedPartIndex = 0;
       fullWidth = 0;
@@ -1319,11 +1336,12 @@
       partsList.innerHTML = "";
       rawSizeEl.textContent = "-";
       fullSizeEl.textContent = "-";
-      lineArtSizeEl.textContent = "-";
+      layerCountEl.textContent = "-";
       partsCountEl.textContent = "-";
       largestPartEl.textContent = "-";
       usedSlicesEl.textContent = "-";
       resultStatusEl.textContent = "-";
+      layerCountEl.textContent = "-";
       downloadFullBtn.disabled = true;
       downloadZipBtn.disabled = true;
       downloadLineArtBtn.disabled = true;
