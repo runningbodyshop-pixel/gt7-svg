@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>SVG Optimizer</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: #111;
+      color: #eee;
+    }
+
+    .app {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 28px;
+    }
+
+    h1 {
+      margin: 0 0 8px;
+      font-size: 32px;
+    }
+
+    h2 {
+      font-size: 18px;
+      margin: 24px 0 10px;
+    }
+
+    .lead {
+      margin: 0 0 20px;
+      color: #aaa;
+    }
+
+    .panel {
+      background: #1c1c1c;
+      border: 1px solid #333;
+      border-radius: 16px;
+      padding: 18px;
+    }
+
+    .file-label {
+      display: inline-block;
+      padding: 12px 18px;
+      background: #fff;
+      color: #111;
+      border-radius: 999px;
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .file-label input {
+      display: none;
+    }
+
+    .controls {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(180px, 1fr));
+      gap: 14px;
+      margin-top: 20px;
+    }
+
+    .control {
+      background: #151515;
+      border: 1px solid #333;
+      border-radius: 12px;
+      padding: 12px;
+      font-size: 14px;
+      color: #ddd;
+    }
+
+    .control label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .control input[type="number"] {
+      width: 80px;
+      margin-left: auto;
+      background: #050505;
+      color: #fff;
+      border: 1px solid #444;
+      border-radius: 8px;
+      padding: 7px;
+    }
+
+    .buttons {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-top: 20px;
+    }
+
+    button {
+      border: 0;
+      border-radius: 999px;
+      padding: 12px 18px;
+      font-weight: 700;
+      cursor: pointer;
+      background: #3399ff;
+      color: white;
+    }
+
+    button.secondary {
+      background: #444;
+    }
+
+    button:disabled {
+      opacity: 0.35;
+      cursor: not-allowed;
+    }
+
+    #status {
+      margin-top: 16px;
+      color: #aaa;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .stats {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-top: 18px;
+    }
+
+    .stat {
+      background: #151515;
+      border: 1px solid #333;
+      border-radius: 14px;
+      padding: 14px;
+    }
+
+    .stat b {
+      display: block;
+      font-size: 22px;
+      margin-top: 4px;
+    }
+
+    .preview {
+      margin-top: 24px;
+      background:
+        linear-gradient(45deg, #222 25%, transparent 25%),
+        linear-gradient(-45deg, #222 25%, transparent 25%),
+        linear-gradient(45deg, transparent 75%, #222 75%),
+        linear-gradient(-45deg, transparent 75%, #222 75%);
+      background-size: 24px 24px;
+      background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+      border: 1px solid #333;
+      border-radius: 16px;
+      min-height: 360px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: auto;
+      padding: 16px;
+    }
+
+    .preview img {
+      max-width: 100%;
+      max-height: 520px;
+    }
+
+    .code-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+
+    textarea {
+      width: 100%;
+      min-height: 320px;
+      padding: 14px;
+      background: #050505;
+      color: #d7ffd7;
+      border: 1px solid #333;
+      border-radius: 16px;
+      resize: vertical;
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 12px;
+      line-height: 1.5;
+    }
+
+    .note {
+      color: #aaa;
+      font-size: 13px;
+      line-height: 1.8;
+    }
+
+    @media (max-width: 900px) {
+      .controls,
+      .stats,
+      .code-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="app">
+    <h1>SVG Optimizer</h1>
+    <p class="lead">完成済みSVGを読み込んで、GitHub Pages上で軽量化します。</p>
+
+    <section class="panel">
+      <label class="file-label">
+        SVGファイルを選択
+        <input id="fileInput" type="file" accept=".svg,image/svg+xml" />
+      </label>
+
+      <div class="controls">
+        <div class="control">
+          <label>
+            小数桁
+            <input id="precisionInput" type="number" min="0" max="4" value="1" />
+          </label>
+        </div>
+
+        <div class="control">
+          <label>
+            <input id="removeCommentsInput" type="checkbox" checked />
+            コメント削除
+          </label>
+        </div>
+
+        <div class="control">
+          <label>
+            <input id="removeMetaInput" type="checkbox" checked />
+            metadata / title / desc削除
+          </label>
+        </div>
+
+        <div class="control">
+          <label>
+            <input id="removeScriptsInput" type="checkbox" checked />
+            script / foreignObject削除
+          </label>
+        </div>
+
+        <div class="control">
+          <label>
+            <input id="removeEditorInput" type="checkbox" checked />
+            編集ソフト系属性を削除
+          </label>
+        </div>
+
+        <div class="control">
+          <label>
+            <input id="shortenColorsInput" type="checkbox" checked />
+            色コード短縮
+          </label>
+        </div>
+
+        <div class="control">
+          <label>
+            <input id="mergePathsInput" type="checkbox" checked />
+            連続する同属性pathを結合
+          </label>
+        </div>
+
+        <div class="control">
+          <label>
+            <input id="removeInvisibleInput" type="checkbox" checked />
+            非表示要素を削除
+          </label>
+        </div>
+
+        <div class="control">
+          <label>
+            <input id="removeEmptyGroupsInput" type="checkbox" checked />
+            空のグループを削除
+          </label>
+        </div>
+      </div>
+
+      <div class="buttons">
+        <button id="optimizeBtn" disabled>軽量化する</button>
+        <button id="copyBtn" class="secondary" disabled>SVGコードをコピー</button>
+        <button id="downloadBtn" class="secondary" disabled>軽量化SVGをダウンロード</button>
+      </div>
+
+      <div id="status">SVGファイルを選択してください。</div>
+
+      <div class="stats">
+        <div class="stat">
+          元サイズ
+          <b id="originalSize">-</b>
+        </div>
+        <div class="stat">
+          軽量化後
+          <b id="optimizedSize">-</b>
+        </div>
+        <div class="stat">
+          削減率
+          <b id="savingRate">-</b>
+        </div>
+      </div>
+    </section>
+
+    <h2>プレビュー</h2>
+    <div class="preview">
+      <img id="previewImg" alt="SVG preview" />
+    </div>
+
+    <div class="code-grid">
+      <section>
+        <h2>元SVG</h2>
+        <textarea id="originalOutput" spellcheck="false"></textarea>
+      </section>
+
+      <section>
+        <h2>軽量化後SVG</h2>
+        <textarea id="optimizedOutput" spellcheck="false"></textarea>
+      </section>
+    </div>
+
+    <p class="note">
+      GT7用にさらに軽くしたい場合は、小数桁を0〜1にしてください。見た目の崩れが出る場合は2に戻してください。
+      このツールはSVG構文を軽くするタイプです。形状そのものを大きく間引く場合は、元のベクター化時点で色数・最小面積・簡略化を強めるのが効果的です。
+    </p>
+  </main>
+
+  <script>
+    const fileInput = document.getElementById("fileInput");
+    const optimizeBtn = document.getElementById("optimizeBtn");
+    const copyBtn = document.getElementById("copyBtn");
+    const downloadBtn = document.getElementById("downloadBtn");
+
+    const originalOutput = document.getElementById("originalOutput");
+    const optimizedOutput = document.getElementById("optimizedOutput");
+    const previewImg = document.getElementById("previewImg");
+    const statusEl = document.getElementById("status");
+
+    const originalSizeEl = document.getElementById("originalSize");
+    const optimizedSizeEl = document.getElementById("optimizedSize");
+    const savingRateEl = document.getElementById("savingRate");
+
+    const precisionInput = document.getElementById("precisionInput");
+    const removeCommentsInput = document.getElementById("removeCommentsInput");
+    const removeMetaInput = document.getElementById("removeMetaInput");
+    const removeScriptsInput = document.getElementById("removeScriptsInput");
+    const removeEditorInput = document.getElementById("removeEditorInput");
+    const shortenColorsInput = document.getElementById("shortenColorsInput");
+    const mergePathsInput = document.getElementById("mergePathsInput");
+    const removeInvisibleInput = document.getElementById("removeInvisibleInput");
+    const removeEmptyGroupsInput = document.getElementById("removeEmptyGroupsInput");
+
+    let originalSvg = "";
+    let optimizedSvg = "";
+    let previewUrl = "";
+
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files[0];
+      if (!file) return;
+
+      originalSvg = await file.text();
+      optimizedSvg = "";
+
+      originalOutput.value = originalSvg;
+      optimizedOutput.value = "";
+
+      optimizeBtn.disabled = false;
+      copyBtn.disabled = true;
+      downloadBtn.disabled = true;
+
+      originalSizeEl.textContent = formatBytes(byteSize(originalSvg));
+      optimizedSizeEl.textContent = "-";
+      savingRateEl.textContent = "-";
+
+      showPreview(originalSvg);
+
+      statusEl.textContent = "SVGを読み込みました。軽量化できます。";
+    });
+
+    optimizeBtn.addEventListener("click", () => {
+      if (!originalSvg) return;
+
+      const options = {
+        precision: clamp(Number(precisionInput.value), 0, 4),
+        removeComments: removeCommentsInput.checked,
+        removeMeta: removeMetaInput.checked,
+        removeScripts: removeScriptsInput.checked,
+        removeEditor: removeEditorInput.checked,
+        shortenColors: shortenColorsInput.checked,
+        mergePaths: mergePathsInput.checked,
+        removeInvisible: removeInvisibleInput.checked,
+        removeEmptyGroups: removeEmptyGroupsInput.checked
+      };
+
+      try {
+        optimizedSvg = optimizeSvgText(originalSvg, options);
+        optimizedOutput.value = optimizedSvg;
+
+        showPreview(optimizedSvg);
+
+        const before = byteSize(originalSvg);
+        const after = byteSize(optimizedSvg);
+        const saving = before > 0 ? ((before - after) / before) * 100 : 0;
+
+        originalSizeEl.textContent = formatBytes(before);
+        optimizedSizeEl.textContent = formatBytes(after);
+        savingRateEl.textContent = `${saving.toFixed(1)}%`;
+
+        copyBtn.disabled = false;
+        downloadBtn.disabled = false;
+
+        statusEl.textContent = "軽量化が完了しました。";
+      } catch (error) {
+        console.error(error);
+        statusEl.textContent = "SVGの解析に失敗しました。SVGファイルの中身を確認してください。";
+      }
+    });
+
+    copyBtn.addEventListener("click", async () => {
+      if (!optimizedSvg) return;
+
+      await navigator.clipboard.writeText(optimizedSvg);
+      statusEl.textContent = "軽量化後のSVGコードをコピーしました。";
+    });
+
+    downloadBtn.addEventListener("click", () => {
+      if (!optimizedSvg) return;
+
+      const blob = new Blob([optimizedSvg], { type: "image/svg+xml" });
+      const url = URL.createObjectURL(blob);
+
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "optimized.svg";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+
+      URL.revokeObjectURL(url);
+    });
+
+    function optimizeSvgText(svgText, options) {
+      let text = svgText.replace(/^\uFEFF/, "");
+
+      if (options.removeComments) {
+        text = text.replace(/<!--[\s\S]*?-->/g, "");
+      }
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(text, "image/svg+xml");
+
+      if (doc.querySelector("parsererror")) {
+        throw new Error("Invalid SVG");
+      }
+
+      const svg = doc.documentElement;
+
+      if (!svg || svg.tagName.toLowerCase() !== "svg") {
+        throw new Error("Not SVG");
+      }
+
+      if (options.removeScripts) {
+        removeElements(svg, ["script", "foreignObject"]);
+      }
+
+      if (options.removeMeta) {
+        removeElements(svg, ["metadata", "desc", "title"]);
+      }
+
+      walk(svg, el => {
+        cleanElement(el, options);
+      });
+
+      if (options.removeInvisible) {
+        removeInvisibleElements(svg);
+      }
+
+      if (options.mergePaths) {
+        mergeConsecutivePaths(svg);
+      }
+
+      if (options.removeEmptyGroups) {
+        removeEmptyGroups(svg);
+      }
+
+      let out = new XMLSerializer().serializeToString(svg);
+
+      out = finalMinify(out);
+
+      return out;
+    }
+
+    function cleanElement(el, options) {
+      const attrs = Array.from(el.attributes || []);
+
+      for (const attr of attrs) {
+        const name = attr.name;
+        let value = attr.value;
+
+        if (options.removeEditor && isEditorAttribute(name)) {
+          el.removeAttribute(name);
+          continue;
+        }
+
+        if (name === "version" || name === "xml:space") {
+          el.removeAttribute(name);
+          continue;
+        }
+
+        if (name === "d") {
+          value = optimizePathD(value, options.precision);
+        } else {
+          value = roundNumbers(value, options.precision);
+        }
+
+        if (options.shortenColors) {
+          value = shortenColors(value);
+        }
+
+        value = trimAttribute(value);
+
+        el.setAttribute(name, value);
+      }
+    }
+
+    function isEditorAttribute(name) {
+      return (
+        name.startsWith("inkscape:") ||
+        name.startsWith("sodipodi:") ||
+        name.startsWith("serif:") ||
+        name.startsWith("sketch:") ||
+        name.startsWith("data-") ||
+        name === "enable-background"
+      );
+    }
+
+    function removeElements(root, names) {
+      for (const name of names) {
+        root.querySelectorAll(name).forEach(el => el.remove());
+      }
+    }
+
+    function walk(root, fn) {
+      fn(root);
+
+      const children = Array.from(root.children);
+
+      for (const child of children) {
+        walk(child, fn);
+      }
+    }
+
+    function removeInvisibleElements(root) {
+      const elements = Array.from(root.querySelectorAll("*")).reverse();
+
+      for (const el of elements) {
+        const display = el.getAttribute("display");
+        const visibility = el.getAttribute("visibility");
+        const opacity = el.getAttribute("opacity");
+        const fill = el.getAttribute("fill");
+        const stroke = el.getAttribute("stroke");
+
+        if (
+          display === "none" ||
+          visibility === "hidden" ||
+          opacity === "0" ||
+          (fill === "none" && stroke === "none")
+        ) {
+          el.remove();
+        }
+      }
+    }
+
+    function removeEmptyGroups(root) {
+      let changed = true;
+
+      while (changed) {
+        changed = false;
+
+        const groups = Array.from(root.querySelectorAll("g")).reverse();
+
+        for (const g of groups) {
+          const hasChildren = g.children.length > 0;
+          const hasText = g.textContent.trim().length > 0;
+
+          if (!hasChildren && !hasText) {
+            g.remove();
+            changed = true;
+          }
+        }
+      }
+    }
+
+    function mergeConsecutivePaths(root) {
+      const parents = [root, ...Array.from(root.querySelectorAll("*"))];
+
+      for (const parent of parents) {
+        const children = Array.from(parent.children);
+        let previousPath = null;
+        let previousKey = "";
+
+        for (const child of children) {
+          if (child.tagName.toLowerCase() !== "path") {
+            previousPath = null;
+            previousKey = "";
+            continue;
+          }
+
+          const key = pathKeyWithoutD(child);
+
+          if (previousPath && key === previousKey) {
+            const d1 = previousPath.getAttribute("d") || "";
+            const d2 = child.getAttribute("d") || "";
+
+            previousPath.setAttribute("d", `${d1} ${d2}`.trim());
+            child.remove();
+          } else {
+            previousPath = child;
+            previousKey = key;
+          }
+        }
+      }
+    }
+
+    function pathKeyWithoutD(path) {
+      const attrs = Array.from(path.attributes)
+        .filter(attr => attr.name !== "d")
+        .map(attr => `${attr.name}=${attr.value}`)
+        .sort();
+
+      return attrs.join("|");
+    }
+
+    function optimizePathD(d, precision) {
+      let out = roundNumbers(d, precision);
+
+      out = out
+        .replace(/,/g, " ")
+        .replace(/\s+/g, " ")
+        .replace(/\s*([MmZzLlHhVvCcSsQqTtAa])\s*/g, "$1")
+        .replace(/\s*-\s*/g, "-")
+        .replace(/([0-9.])-/g, "$1-")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      return out;
+    }
+
+    function roundNumbers(text, precision) {
+      return String(text).replace(/-?\d*\.?\d+(?:e[-+]?\d+)?/gi, match => {
+        const n = Number(match);
+
+        if (!Number.isFinite(n)) return match;
+
+        let value;
+
+        if (precision <= 0) {
+          value = String(Math.round(n));
+        } else {
+          value = n.toFixed(precision);
+          value = value.replace(/\.?0+$/, "");
+        }
+
+        if (value === "-0") value = "0";
+
+        value = value.replace(/^(-?)0\./, "$1.");
+
+        return value;
+      });
+    }
+
+    function shortenColors(text) {
+      let out = String(text);
+
+      out = out.replace(/#([0-9a-fA-F]{6})\b/g, (_, hex) => {
+        const h = hex.toLowerCase();
+
+        if (h[0] === h[1] && h[2] === h[3] && h[4] === h[5]) {
+          return `#${h[0]}${h[2]}${h[4]}`;
+        }
+
+        return `#${h}`;
+      });
+
+      out = out.replace(/rgb\(\s*(\d+)\s*,\s*(\d+)\s*,\s*(\d+)\s*\)/gi, (_, r, g, b) => {
+        return rgbToHex(Number(r), Number(g), Number(b));
+      });
+
+      return out;
+    }
+
+    function rgbToHex(r, g, b) {
+      const hex = [r, g, b].map(v => {
+        const s = clamp(v, 0, 255).toString(16);
+        return s.length === 1 ? "0" + s : s;
+      }).join("");
+
+      if (hex[0] === hex[1] && hex[2] === hex[3] && hex[4] === hex[5]) {
+        return `#${hex[0]}${hex[2]}${hex[4]}`;
+      }
+
+      return `#${hex}`;
+    }
+
+    function trimAttribute(value) {
+      return String(value)
+        .replace(/\s+/g, " ")
+        .replace(/;\s*/g, ";")
+        .replace(/:\s*/g, ":")
+        .replace(/\s*,\s*/g, ",")
+        .trim();
+    }
+
+    function finalMinify(svg) {
+      return svg
+        .replace(/<\?xml[\s\S]*?\?>/g, "")
+        .replace(/<!DOCTYPE[\s\S]*?>/gi, "")
+        .replace(/>\s+</g, "><")
+        .replace(/\s{2,}/g, " ")
+        .replace(/\s\/>/g, "/>")
+        .trim();
+    }
+
+    function showPreview(svg) {
+      if (previewUrl) {
+        URL.revokeObjectURL(previewUrl);
+      }
+
+      const blob = new Blob([svg], { type: "image/svg+xml" });
+      previewUrl = URL.createObjectURL(blob);
+      previewImg.src = previewUrl;
+    }
+
+    function byteSize(text) {
+      return new Blob([text]).size;
+    }
+
+    function formatBytes(bytes) {
+      if (bytes < 1024) {
+        return `${bytes} B`;
+      }
+
+      if (bytes < 1024 * 1024) {
+        return `${(bytes / 1024).toFixed(1)} KB`;
+      }
+
+      return `${(bytes / 1024 / 1024).toFixed(2)} MB`;
+    }
+
+    function clamp(value, min, max) {
+      return Math.max(min, Math.min(max, value));
+    }
+  </script>
+</body>
+</html>
